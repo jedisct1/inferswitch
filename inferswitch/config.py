@@ -29,9 +29,27 @@ TRUNCATION_BUFFER = 1000  # buffer to leave when truncating
 
 # Model context sizes (in tokens, will be multiplied by 4 for chars)
 MODEL_CONTEXT_SIZES = {
+    # Claude 3 (legacy)
     "claude-3-opus": 200000,
     "claude-3-sonnet": 200000,
     "claude-3-haiku": 200000,
+    "claude-3-opus-20240229": 200000,
+    "claude-3-sonnet-20240229": 200000,
+    "claude-3-haiku-20240307": 200000,
+    
+    # Claude 3.5
+    "claude-3-5-sonnet": 200000,
+    "claude-3-5-sonnet-20240620": 200000,
+    "claude-3-5-sonnet-20241022": 200000,
+    "claude-3-5-haiku": 200000,
+    "claude-3-5-haiku-20241022": 200000,
+    
+    # Claude 4 (Sonnet 4)
+    "claude-4": 200000,
+    "claude-4-20250514": 200000,
+    "claude-sonnet-4": 200000,
+    "claude-sonnet-4-20250514": 200000,
+    
     "default": 50000
 }
 

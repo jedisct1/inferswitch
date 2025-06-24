@@ -1,0 +1,20 @@
+[project]
+name = "inferswitch"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.12",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.5",
+    "requests>=2.32.4",
+    "uvicorn>=0.34.3",
+    "mlx>=0.15.0",
+    "mlx-lm>=0.16.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.0",
+]

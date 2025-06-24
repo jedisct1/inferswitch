@@ -1,0 +1,29 @@
+{
+  "force_difficulty_routing": true,
+  "difficulty_models": {
+    "0-1": "all-hands_openhands-lm-32b-v0.1",
+    "2": "claude-3-5-haiku-20241022",
+    "3": "claude-3-7-sonnet-20250219",
+    "4": "claude-sonnet-4-20250514",
+    "5": "claude-opus-4-20250514"
+  },
+  "model_providers": {
+    "qwen/qwen3-1.7b": "lm-studio",
+    "qwen/qwen3-30b-a3b": "lm-studio",
+    "all-hands_openhands-lm-32b-v0.1": "lm-studio",
+    "claude-3-5-haiku-20241022": "anthropic",
+    "claude-3-5-sonnet-20241022": "anthropic",
+    "claude-3-7-sonnet-20250219": "anthropic",
+    "claude-sonnet-4-20250514": "anthropic",
+    "claude-opus-4-20250514": "anthropic"
+  },
+  "fallback": {
+    "provider": "lm-studio",
+    "model": "all-hands_openhands-lm-32b-v0.1"
+  },
+  "providers_auth": {
+    "anthropic": {
+      "oauth": {}
+    }
+  }
+}

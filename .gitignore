@@ -1,0 +1,51 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+.tox/
+htmlcov/
+*.cover
+
+# Debug files
+debug_*.py
+test_*.py
+!tests/test_*.py
+*.pid
+server.log
+requests.log
+DIFFICULTY_*.md
+*.log
+*.bak
+*.tmp
+*.debug
+
+# Config backups
+*.json~
+inferswitch.config.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

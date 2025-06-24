@@ -183,9 +183,9 @@ Configure InferSwitch to automatically route based on query difficulty:
 ```
 
 2. **Now InferSwitch automatically routes**:
-   - "What is 2+2?" → Local model (difficulty ~0.1)
-   - "Write a Python function" → Sonnet (difficulty ~0.5)
-   - "Design a distributed system" → Opus (difficulty ~0.9)
+   - "What is 2+2?" → Local model (difficulty ~0)
+   - "Write a Python function" → Sonnet (difficulty ~3)
+   - "Design a distributed system" → Opus (difficulty ~10)
 
 ## Configuration
 
@@ -239,9 +239,9 @@ Create `inferswitch.config.json` in your working directory:
 
   // Difficulty-based routing
   "difficulty_models": {
-    "0.0-0.3": "claude-3-haiku-20240307",
-    "0.3-0.7": "claude-3-5-sonnet-20241022",
-    "0.7-1.0": "claude-3-opus-20240229"
+    "0-3": "claude-3-haiku-20240307",
+    "3-7": "claude-3-5-sonnet-20241022",
+    "7-10": "claude-3-opus-20240229"
   },
 
   // OAuth configuration (optional)

@@ -49,7 +49,7 @@ InferSwitch is an intelligent API gateway that seamlessly routes requests betwee
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/inferswitch.git
+git clone https://github.com/jedisct1/inferswitch.git
 cd inferswitch
 
 # Install dependencies with uv
@@ -63,7 +63,7 @@ uv run python main.py
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/inferswitch.git
+git clone https://github.com/jedisct1/inferswitch.git
 cd inferswitch
 
 # Install dependencies

@@ -1,0 +1,462 @@
+{
+  "model": "mlx-community/Qwen2.5-7B-4bit",
+  "total_questions": 50,
+  "metrics": {
+    "mae": 0.6,
+    "rmse": 0.8602325267042626,
+    "bucket_accuracy": 52.0,
+    "avg_time_ms": 1111.3303470611572
+  },
+  "results": [
+    {
+      "question": "Can you proofread this README file for typos?",
+      "expected": 0,
+      "predicted": 1.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1097.1271991729736,
+      "correct_bucket": false
+    },
+    {
+      "question": "What does 'API' stand for?",
+      "expected": 0,
+      "predicted": 0.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1052.0999431610107,
+      "correct_bucket": true
+    },
+    {
+      "question": "Is this variable name descriptive enough: 'x'?",
+      "expected": 0,
+      "predicted": 1.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1058.711051940918,
+      "correct_bucket": false
+    },
+    {
+      "question": "Can you check if this comment makes sense?",
+      "expected": 0,
+      "predicted": 1.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1058.1769943237305,
+      "correct_bucket": false
+    },
+    {
+      "question": "What is the difference between frontend and backend?",
+      "expected": 1,
+      "predicted": 2.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1063.7791156768799,
+      "correct_bucket": false
+    },
+    {
+      "question": "Can you explain what version control is in simple terms?",
+      "expected": 1,
+      "predicted": 1.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1063.1358623504639,
+      "correct_bucket": true
+    },
+    {
+      "question": "Review this documentation for clarity",
+      "expected": 1,
+      "predicted": 1.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1065.9441947937012,
+      "correct_bucket": true
+    },
+    {
+      "question": "What does HTTP stand for?",
+      "expected": 0,
+      "predicted": 1.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1086.129903793335,
+      "correct_bucket": false
+    },
+    {
+      "question": "Can you explain what a database is to a non-technical person?",
+      "expected": 1,
+      "predicted": 1.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1084.3091011047363,
+      "correct_bucket": true
+    },
+    {
+      "question": "Is this error message user-friendly?",
+      "expected": 1,
+      "predicted": 1.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1069.8888301849365,
+      "correct_bucket": true
+    },
+    {
+      "question": "How do I print 'Hello World' in Python?",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1072.8089809417725,
+      "correct_bucket": true
+    },
+    {
+      "question": "Create a for loop that counts from 1 to 10",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1224.142074584961,
+      "correct_bucket": true
+    },
+    {
+      "question": "How do I declare a variable in JavaScript?",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1075.740098953247,
+      "correct_bucket": true
+    },
+    {
+      "question": "Write a function that adds two numbers",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1075.3519535064697,
+      "correct_bucket": true
+    },
+    {
+      "question": "How do I read a file in Python?",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1077.003002166748,
+      "correct_bucket": true
+    },
+    {
+      "question": "Create a simple if-else statement",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1083.8379859924316,
+      "correct_bucket": true
+    },
+    {
+      "question": "How do I install packages with npm?",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1079.8900127410889,
+      "correct_bucket": true
+    },
+    {
+      "question": "Write a SQL query to select all records from a table",
+      "expected": 3,
+      "predicted": 3.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1085.028886795044,
+      "correct_bucket": true
+    },
+    {
+      "question": "Implement user authentication with JWT tokens",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1096.055030822754,
+      "correct_bucket": false
+    },
+    {
+      "question": "Create a REST API with CRUD operations",
+      "expected": 4,
+      "predicted": 4.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1144.9170112609863,
+      "correct_bucket": true
+    },
+    {
+      "question": "Implement a React component with state management",
+      "expected": 4,
+      "predicted": 3.5,
+      "absolute_error": 0.5,
+      "squared_error": 0.25,
+      "time_ms": 1100.815773010254,
+      "correct_bucket": true
+    },
+    {
+      "question": "Design a database schema with proper relationships",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1093.0068492889404,
+      "correct_bucket": false
+    },
+    {
+      "question": "Create a middleware for error handling in Express",
+      "expected": 4,
+      "predicted": 3.5,
+      "absolute_error": 0.5,
+      "squared_error": 0.25,
+      "time_ms": 1101.2580394744873,
+      "correct_bucket": true
+    },
+    {
+      "question": "Implement pagination in a web application",
+      "expected": 4,
+      "predicted": 4.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1105.1840782165527,
+      "correct_bucket": true
+    },
+    {
+      "question": "Set up a CI/CD pipeline with automated testing",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1098.649263381958,
+      "correct_bucket": false
+    },
+    {
+      "question": "Design a microservices architecture with proper communication",
+      "expected": 5,
+      "predicted": 3.0,
+      "absolute_error": 2.0,
+      "squared_error": 4.0,
+      "time_ms": 1097.7609157562256,
+      "correct_bucket": false
+    },
+    {
+      "question": "Implement a distributed caching system",
+      "expected": 5,
+      "predicted": 4.5,
+      "absolute_error": 0.5,
+      "squared_error": 0.25,
+      "time_ms": 1111.4568710327148,
+      "correct_bucket": true
+    },
+    {
+      "question": "Create a custom webpack configuration with code splitting",
+      "expected": 4,
+      "predicted": 4.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1127.4080276489258,
+      "correct_bucket": true
+    },
+    {
+      "question": "Implement WebSocket real-time communication",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1121.6089725494385,
+      "correct_bucket": false
+    },
+    {
+      "question": "Design and implement OAuth2 authentication flow",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1106.3108444213867,
+      "correct_bucket": false
+    },
+    {
+      "question": "Debug and fix a memory leak in production",
+      "expected": 5,
+      "predicted": 3.0,
+      "absolute_error": 2.0,
+      "squared_error": 4.0,
+      "time_ms": 1106.5747737884521,
+      "correct_bucket": false
+    },
+    {
+      "question": "Implement a real-time collaborative editor with conflict resolution",
+      "expected": 5,
+      "predicted": 5.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1178.4238815307617,
+      "correct_bucket": true
+    },
+    {
+      "question": "Create a custom compiler or interpreter",
+      "expected": 5,
+      "predicted": 5.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1144.2790031433105,
+      "correct_bucket": true
+    },
+    {
+      "question": "Optimize database queries for large-scale applications",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1160.4630947113037,
+      "correct_bucket": false
+    },
+    {
+      "question": "Implement GraphQL with proper resolver optimization",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1228.320837020874,
+      "correct_bucket": false
+    },
+    {
+      "question": "Explain what npm is in layman's terms",
+      "expected": 1,
+      "predicted": 1.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1196.8648433685303,
+      "correct_bucket": true
+    },
+    {
+      "question": "Can you review this code comment for accuracy?",
+      "expected": 1,
+      "predicted": 1.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1114.8250102996826,
+      "correct_bucket": true
+    },
+    {
+      "question": "Implement a binary search algorithm",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1230.8759689331055,
+      "correct_bucket": false
+    },
+    {
+      "question": "Create a file upload system with validation",
+      "expected": 4,
+      "predicted": 4.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1112.0140552520752,
+      "correct_bucket": true
+    },
+    {
+      "question": "Write a Python decorator",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1096.3189601898193,
+      "correct_bucket": false
+    },
+    {
+      "question": "Explain the concept of asynchronous programming",
+      "expected": 2,
+      "predicted": 2.0,
+      "absolute_error": 0.0,
+      "squared_error": 0.0,
+      "time_ms": 1144.981861114502,
+      "correct_bucket": true
+    },
+    {
+      "question": "Implement API rate limiting",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1131.5498352050781,
+      "correct_bucket": false
+    },
+    {
+      "question": "Create a Docker container for deployment",
+      "expected": 4,
+      "predicted": 3.5,
+      "absolute_error": 0.5,
+      "squared_error": 0.25,
+      "time_ms": 1099.1361141204834,
+      "correct_bucket": true
+    },
+    {
+      "question": "Implement async/await error handling",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1148.7033367156982,
+      "correct_bucket": false
+    },
+    {
+      "question": "Create a thread-safe data structure",
+      "expected": 5,
+      "predicted": 4.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1108.5219383239746,
+      "correct_bucket": false
+    },
+    {
+      "question": "Handle race conditions in concurrent systems",
+      "expected": 5,
+      "predicted": 3.0,
+      "absolute_error": 2.0,
+      "squared_error": 4.0,
+      "time_ms": 1126.5509128570557,
+      "correct_bucket": false
+    },
+    {
+      "question": "Write custom linting rules",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1093.7340259552002,
+      "correct_bucket": false
+    },
+    {
+      "question": "Implement server-sent events",
+      "expected": 4,
+      "predicted": 3.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1118.638038635254,
+      "correct_bucket": false
+    },
+    {
+      "question": "Design a scalable database architecture",
+      "expected": 5,
+      "predicted": 3.0,
+      "absolute_error": 2.0,
+      "squared_error": 4.0,
+      "time_ms": 1144.4931030273438,
+      "correct_bucket": false
+    },
+    {
+      "question": "Implement a B-tree data structure",
+      "expected": 5,
+      "predicted": 4.0,
+      "absolute_error": 1.0,
+      "squared_error": 1.0,
+      "time_ms": 1103.7108898162842,
+      "correct_bucket": false
+    }
+  ]
+}

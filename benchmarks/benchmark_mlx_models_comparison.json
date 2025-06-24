@@ -1,0 +1,546 @@
+{
+  "test_date": "2025-06-22 22:57:40",
+  "test_cases_count": 28,
+  "models": [
+    {
+      "model": "mlx-community/Qwen2.5-Coder-7B-8bit",
+      "total_questions": 28,
+      "metrics": {
+        "mae": 0.2857142857142857,
+        "rmse": 0.5345224838248488,
+        "bucket_accuracy": 71.42857142857143,
+        "avg_time_ms": 1258.6066382271904,
+        "total_time_s": 35.24098587036133
+      },
+      "model_info": {
+        "loaded": true,
+        "model": "mlx-community/Qwen2.5-Coder-7B-8bit",
+        "tokenizer_type": "TokenizerWrapper"
+      },
+      "results": [
+        {
+          "question": "Can you proofread this README file for typos?",
+          "expected": 0,
+          "predicted": 1.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1205.4088115692139,
+          "correct_bucket": false
+        },
+        {
+          "question": "What does 'API' stand for?",
+          "expected": 0,
+          "predicted": 0.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1205.4011821746826,
+          "correct_bucket": true
+        },
+        {
+          "question": "Is this variable name descriptive enough: 'x'?",
+          "expected": 0,
+          "predicted": 1.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1210.7882499694824,
+          "correct_bucket": false
+        },
+        {
+          "question": "Can you check if this comment makes sense?",
+          "expected": 0,
+          "predicted": 1.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1214.6379947662354,
+          "correct_bucket": false
+        },
+        {
+          "question": "What is the difference between frontend and backend?",
+          "expected": 1,
+          "predicted": 2.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1231.9056987762451,
+          "correct_bucket": false
+        },
+        {
+          "question": "Can you explain what version control is in simple terms?",
+          "expected": 1,
+          "predicted": 1.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1262.0899677276611,
+          "correct_bucket": true
+        },
+        {
+          "question": "Review this documentation for clarity",
+          "expected": 1,
+          "predicted": 2.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1211.8556499481201,
+          "correct_bucket": false
+        },
+        {
+          "question": "What does HTTP stand for?",
+          "expected": 0,
+          "predicted": 1.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1233.077049255371,
+          "correct_bucket": false
+        },
+        {
+          "question": "Can you explain what a database is to a non-technical person?",
+          "expected": 1,
+          "predicted": 1.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1266.9858932495117,
+          "correct_bucket": true
+        },
+        {
+          "question": "Is this error message user-friendly?",
+          "expected": 1,
+          "predicted": 2.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1219.6390628814697,
+          "correct_bucket": false
+        },
+        {
+          "question": "How do I print 'Hello World' in Python?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1230.903148651123,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a for loop that counts from 1 to 10",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1385.7841491699219,
+          "correct_bucket": true
+        },
+        {
+          "question": "How do I declare a variable in JavaScript?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1257.9939365386963,
+          "correct_bucket": true
+        },
+        {
+          "question": "Write a function that adds two numbers",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1271.2903022766113,
+          "correct_bucket": true
+        },
+        {
+          "question": "How do I read a file in Python?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1277.6341438293457,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a simple if-else statement",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1309.4689846038818,
+          "correct_bucket": true
+        },
+        {
+          "question": "How do I install packages with npm?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1268.0108547210693,
+          "correct_bucket": true
+        },
+        {
+          "question": "Write a SQL query to select all records from a table",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1280.357837677002,
+          "correct_bucket": true
+        },
+        {
+          "question": "Implement user authentication with JWT tokens",
+          "expected": 4,
+          "predicted": 4.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1268.110752105713,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a REST API with CRUD operations",
+          "expected": 4,
+          "predicted": 4.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1290.0967597961426,
+          "correct_bucket": true
+        },
+        {
+          "question": "Set up Docker containers for a microservices architecture",
+          "expected": 4,
+          "predicted": 4.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1251.6262531280518,
+          "correct_bucket": true
+        },
+        {
+          "question": "Implement real-time chat with WebSockets",
+          "expected": 4,
+          "predicted": 4.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1256.4361095428467,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a GraphQL API with authentication",
+          "expected": 4,
+          "predicted": 4.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1280.099868774414,
+          "correct_bucket": true
+        },
+        {
+          "question": "Write a compiler for a simple programming language",
+          "expected": 5,
+          "predicted": 5.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1263.2410526275635,
+          "correct_bucket": true
+        },
+        {
+          "question": "Implement a garbage collector from scratch",
+          "expected": 5,
+          "predicted": 5.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1265.9740447998047,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a distributed consensus algorithm",
+          "expected": 5,
+          "predicted": 5.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1272.829294204712,
+          "correct_bucket": true
+        },
+        {
+          "question": "Build a memory allocator for an operating system",
+          "expected": 5,
+          "predicted": 5.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 1292.083978652954,
+          "correct_bucket": true
+        },
+        {
+          "question": "Design a Byzantine fault-tolerant system",
+          "expected": 5,
+          "predicted": 4.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 1257.2548389434814,
+          "correct_bucket": false
+        }
+      ]
+    },
+    {
+      "model": "Qwen/Qwen2.5-Coder-0.5B",
+      "total_questions": 28,
+      "metrics": {
+        "mae": 0.6964285714285714,
+        "rmse": 1.0732128000940513,
+        "bucket_accuracy": 60.71428571428571,
+        "avg_time_ms": 108.87815271105084,
+        "total_time_s": 3.048588275909424
+      },
+      "model_info": {
+        "loaded": true,
+        "model": "Qwen/Qwen2.5-Coder-0.5B",
+        "tokenizer_type": "TokenizerWrapper"
+      },
+      "results": [
+        {
+          "question": "Can you proofread this README file for typos?",
+          "expected": 0,
+          "predicted": 0.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 103.75690460205078,
+          "correct_bucket": true
+        },
+        {
+          "question": "What does 'API' stand for?",
+          "expected": 0,
+          "predicted": 0.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 105.36503791809082,
+          "correct_bucket": true
+        },
+        {
+          "question": "Is this variable name descriptive enough: 'x'?",
+          "expected": 0,
+          "predicted": 1.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 106.10795021057129,
+          "correct_bucket": false
+        },
+        {
+          "question": "Can you check if this comment makes sense?",
+          "expected": 0,
+          "predicted": 0.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 107.81574249267578,
+          "correct_bucket": true
+        },
+        {
+          "question": "What is the difference between frontend and backend?",
+          "expected": 1,
+          "predicted": 2.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 108.96897315979004,
+          "correct_bucket": false
+        },
+        {
+          "question": "Can you explain what version control is in simple terms?",
+          "expected": 1,
+          "predicted": 1.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 106.93502426147461,
+          "correct_bucket": true
+        },
+        {
+          "question": "Review this documentation for clarity",
+          "expected": 1,
+          "predicted": 2.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 106.719970703125,
+          "correct_bucket": false
+        },
+        {
+          "question": "What does HTTP stand for?",
+          "expected": 0,
+          "predicted": 1.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 107.28716850280762,
+          "correct_bucket": false
+        },
+        {
+          "question": "Can you explain what a database is to a non-technical person?",
+          "expected": 1,
+          "predicted": 2.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 107.13076591491699,
+          "correct_bucket": false
+        },
+        {
+          "question": "Is this error message user-friendly?",
+          "expected": 1,
+          "predicted": 0.0,
+          "absolute_error": 1.0,
+          "squared_error": 1.0,
+          "time_ms": 105.8800220489502,
+          "correct_bucket": false
+        },
+        {
+          "question": "How do I print 'Hello World' in Python?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 109.06171798706055,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a for loop that counts from 1 to 10",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 127.9900074005127,
+          "correct_bucket": true
+        },
+        {
+          "question": "How do I declare a variable in JavaScript?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 106.95195198059082,
+          "correct_bucket": true
+        },
+        {
+          "question": "Write a function that adds two numbers",
+          "expected": 3,
+          "predicted": 5.0,
+          "absolute_error": 2.0,
+          "squared_error": 4.0,
+          "time_ms": 107.00535774230957,
+          "correct_bucket": false
+        },
+        {
+          "question": "How do I read a file in Python?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 107.4209213256836,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a simple if-else statement",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 107.69796371459961,
+          "correct_bucket": true
+        },
+        {
+          "question": "How do I install packages with npm?",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 108.5350513458252,
+          "correct_bucket": true
+        },
+        {
+          "question": "Write a SQL query to select all records from a table",
+          "expected": 3,
+          "predicted": 3.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 108.71696472167969,
+          "correct_bucket": true
+        },
+        {
+          "question": "Implement user authentication with JWT tokens",
+          "expected": 4,
+          "predicted": 2.0,
+          "absolute_error": 2.0,
+          "squared_error": 4.0,
+          "time_ms": 107.60307312011719,
+          "correct_bucket": false
+        },
+        {
+          "question": "Create a REST API with CRUD operations",
+          "expected": 4,
+          "predicted": 4.0,
+          "absolute_error": 0.0,
+          "squared_error": 0.0,
+          "time_ms": 109.96389389038086,
+          "correct_bucket": true
+        },
+        {
+          "question": "Set up Docker containers for a microservices architecture",
+          "expected": 4,
+          "predicted": 1.0,
+          "absolute_error": 3.0,
+          "squared_error": 9.0,
+          "time_ms": 109.40790176391602,
+          "correct_bucket": false
+        },
+        {
+          "question": "Implement real-time chat with WebSockets",
+          "expected": 4,
+          "predicted": 2.0,
+          "absolute_error": 2.0,
+          "squared_error": 4.0,
+          "time_ms": 111.30619049072266,
+          "correct_bucket": false
+        },
+        {
+          "question": "Create a GraphQL API with authentication",
+          "expected": 4,
+          "predicted": 3.5,
+          "absolute_error": 0.5,
+          "squared_error": 0.25,
+          "time_ms": 111.73200607299805,
+          "correct_bucket": true
+        },
+        {
+          "question": "Write a compiler for a simple programming language",
+          "expected": 5,
+          "predicted": 4.5,
+          "absolute_error": 0.5,
+          "squared_error": 0.25,
+          "time_ms": 108.6430549621582,
+          "correct_bucket": true
+        },
+        {
+          "question": "Implement a garbage collector from scratch",
+          "expected": 5,
+          "predicted": 4.5,
+          "absolute_error": 0.5,
+          "squared_error": 0.25,
+          "time_ms": 110.47482490539551,
+          "correct_bucket": true
+        },
+        {
+          "question": "Create a distributed consensus algorithm",
+          "expected": 5,
+          "predicted": 4.5,
+          "absolute_error": 0.5,
+          "squared_error": 0.25,
+          "time_ms": 110.96882820129395,
+          "correct_bucket": true
+        },
+        {
+          "question": "Build a memory allocator for an operating system",
+          "expected": 5,
+          "predicted": 4.5,
+          "absolute_error": 0.5,
+          "squared_error": 0.25,
+          "time_ms": 110.21018028259277,
+          "correct_bucket": true
+        },
+        {
+          "question": "Design a Byzantine fault-tolerant system",
+          "expected": 5,
+          "predicted": 3.0,
+          "absolute_error": 2.0,
+          "squared_error": 4.0,
+          "time_ms": 108.93082618713379,
+          "correct_bucket": false
+        }
+      ]
+    }
+  ]
+}

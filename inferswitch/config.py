@@ -44,11 +44,13 @@ MODEL_CONTEXT_SIZES = {
     "claude-3-5-haiku": 200000,
     "claude-3-5-haiku-20241022": 200000,
     
-    # Claude 4 (Sonnet 4)
+    # Claude 4
     "claude-4": 200000,
     "claude-4-20250514": 200000,
     "claude-sonnet-4": 200000,
     "claude-sonnet-4-20250514": 200000,
+    "claude-opus-4": 200000,
+    "claude-4-opus": 200000,
     
     "default": 50000
 }

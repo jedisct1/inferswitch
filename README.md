@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/FastAPI-0.100+-orange.svg" alt="FastAPI">
 </div>
 
-![InferSwitch logo](https://raw.github.com/jedisct1/inferswitch/master/.media/logo.png)
+<img src="https://raw.github.com/jedisct1/inferswitch/master/.media/logo.png" alt="InferSwitch logo" width="600">
 
 ## Unified Gateway for Multiple LLM Providers
 

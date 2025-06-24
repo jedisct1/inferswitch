@@ -6,6 +6,8 @@
   <img src="https://img.shields.io/badge/FastAPI-0.100+-orange.svg" alt="FastAPI">
 </div>
 
+![InferSwitch logo](https://raw.github.com/jedisct1/inferswitch/master/.media/logo.png)
+
 ## Unified Gateway for Multiple LLM Providers
 
 InferSwitch is an intelligent API gateway that seamlessly routes requests between multiple Large Language Model (LLM) providers. It acts as a drop-in replacement for the Anthropic API while providing automatic failover, smart caching, and the ability to use local models for appropriate queries.

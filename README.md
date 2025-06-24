@@ -152,21 +152,32 @@ Configure InferSwitch to automatically route based on query difficulty:
 1. **Create `inferswitch.config.json`**:
 ```json
 {
+  "force_difficulty_routing": true,
   "difficulty_models": {
-    "0.0-0.3": "claude-3-haiku-20240307",
-    "0.3-0.7": "claude-3-5-sonnet-20241022",
-    "0.7-1.0": "claude-3-opus-20240229"
-  },
-  "backends": {
-    "lm-studio": {
-      "base_url": "http://127.0.0.1:1234",
-      "models": ["claude-3-haiku-20240307"]
-    }
+    "0-1": "all-hands_openhands-lm-32b-v0.1",
+    "2": "claude-3-5-haiku-20241022",
+    "3": "claude-3-7-sonnet-20250219",
+    "4": "claude-sonnet-4-20250514",
+    "5": "claude-opus-4-20250514"
   },
   "model_providers": {
-    "claude-3-haiku-20240307": "lm-studio",
+    "qwen/qwen3-1.7b": "lm-studio",
+    "qwen/qwen3-30b-a3b": "lm-studio",
+    "all-hands_openhands-lm-32b-v0.1": "lm-studio",
+    "claude-3-5-haiku-20241022": "anthropic",
     "claude-3-5-sonnet-20241022": "anthropic",
-    "claude-3-opus-20240229": "anthropic"
+    "claude-3-7-sonnet-20250219": "anthropic",
+    "claude-sonnet-4-20250514": "anthropic",
+    "claude-opus-4-20250514": "anthropic"
+  },
+  "fallback": {
+    "provider": "lm-studio",
+    "model": "all-hands_openhands-lm-32b-v0.1"
+  },
+  "providers_auth": {
+    "anthropic": {
+      "oauth": {}
+    }
   }
 }
 ```

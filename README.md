@@ -249,9 +249,7 @@ Create `inferswitch.config.json` in your working directory:
   // OAuth configuration (optional)
   "providers_auth": {
     "anthropic": {
-      "oauth": {
-        "client_id": "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
-      }
+      "oauth": {}
     }
   },
 

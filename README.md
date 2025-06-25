@@ -156,11 +156,11 @@ Configure InferSwitch to automatically route based on query difficulty:
 {
   "force_difficulty_routing": true,
   "difficulty_models": {
-    "0-1": "all-hands_openhands-lm-32b-v0.1",
-    "2": "claude-3-5-haiku-20241022",
-    "3": "claude-3-7-sonnet-20250219",
-    "4": "claude-sonnet-4-20250514",
-    "5": "claude-opus-4-20250514"
+    "0-1": ["all-hands_openhands-lm-32b-v0.1", "gpt-3.5-turbo"],
+    "2": ["claude-3-5-haiku-20241022", "gpt-4"],
+    "3": ["claude-3-7-sonnet-20250219", "gpt-4-turbo"],
+    "4": ["claude-sonnet-4-20250514"],
+    "5": ["claude-opus-4-20250514"]
   },
   "model_providers": {
     "qwen/qwen3-1.7b": "lm-studio",
@@ -278,6 +278,7 @@ Create `inferswitch.config.json` in your working directory:
 | `CACHE_TTL_SECONDS`          | Cache time-to-live                     | `3600`                  |
 | `LOG_LEVEL`                  | Logging verbosity                      | `INFO`                  |
 | `PROXY_MODE`                 | Enable proxy mode                      | `true`                  |
+| `INFERSWITCH_MODEL_DISABLE_DURATION` | Seconds to disable failed models | `300`                   |
 
 ## Core Concepts
 
@@ -319,6 +320,28 @@ INFERSWITCH_MODEL_OVERRIDE="claude-3-5-sonnet-20241022:llama-3.1-8b" uv run pyth
 # Replace ALL models with a single model
 INFERSWITCH_DEFAULT_MODEL="llama-3.1-8b" uv run python main.py
 ```
+
+### Automatic Model Fallback
+
+InferSwitch provides automatic fallback when models fail due to rate limits or insufficient credits:
+
+```json
+{
+  "difficulty_models": {
+    "0-3": ["claude-3-haiku-20240307", "gpt-3.5-turbo", "llama-3.1-8b"],
+    "3-5": ["claude-3-5-sonnet-20241022", "gpt-4-turbo", "claude-3-opus-20240229"]
+  },
+  "model_availability": {
+    "disable_duration_seconds": 300  // 5 minutes
+  }
+}
+```
+
+Features:
+- **Automatic Retry**: When a model fails, the next model in the list is tried
+- **Temporary Disabling**: Failed models are disabled for a configurable duration
+- **Self-Healing**: Models automatically re-enable after the cooldown period
+- **Smart Detection**: Recognizes rate limits (429) and credit errors (402)
 
 ## API Reference
 

@@ -2,11 +2,12 @@
 Request routing logic for selecting appropriate backends.
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 import logging
 from .base import BaseBackend
 from .config import BackendConfigManager
 from .errors import ModelNotFoundError
+from .availability import ModelAvailabilityTracker
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,12 @@ class BackendRouter:
         self.model_providers = BackendConfigManager.get_model_provider_mapping()
         self.fallback_config = BackendConfigManager.get_fallback_config()
         self.force_difficulty_routing = BackendConfigManager.should_force_difficulty_routing()
+        
+        # Initialize availability tracker
+        availability_config = BackendConfigManager.get_model_availability_config()
+        self.availability_tracker = ModelAvailabilityTracker(
+            disable_duration_seconds=availability_config["disable_duration_seconds"]
+        )
         
     def select_backend(
         self,
@@ -55,9 +62,12 @@ class BackendRouter:
         # skip all other routing logic and go straight to difficulty-based routing
         if self.force_difficulty_routing and difficulty_rating is not None:
             logger.debug(f"Force difficulty routing enabled, using difficulty-based routing for rating {difficulty_rating}")
-            backend = self._route_by_difficulty(model, difficulty_rating)
-            if backend:
-                logger.debug(f"Selected backend: {backend.name} (forced difficulty-based routing)")
+            result = self._route_by_difficulty(model, difficulty_rating)
+            if result:
+                backend, selected_model = result
+                # Store the selected model for the backend to use
+                backend._difficulty_selected_model = selected_model
+                logger.debug(f"Selected backend: {backend.name} (forced difficulty-based routing, model: {selected_model})")
                 return backend
             else:
                 logger.debug(f"No backend found for difficulty {difficulty_rating}, continuing with normal routing")
@@ -114,9 +124,12 @@ class BackendRouter:
         # 3. Difficulty-based routing (if difficulty rating is provided)
         logger.debug("Checking difficulty-based routing")
         if difficulty_rating is not None:
-            backend = self._route_by_difficulty(model, difficulty_rating)
-            if backend:
-                logger.debug(f"Selected backend: {backend.name} (difficulty-based routing)")
+            result = self._route_by_difficulty(model, difficulty_rating)
+            if result:
+                backend, selected_model = result
+                # Store the selected model for the backend to use
+                backend._difficulty_selected_model = selected_model
+                logger.debug(f"Selected backend: {backend.name} (difficulty-based routing, model: {selected_model})")
                 return backend
             else:
                 logger.debug(f"No backend found for difficulty {difficulty_rating}")
@@ -154,8 +167,26 @@ class BackendRouter:
             available_models=available_models
         )
     
+    def mark_model_failure(self, model: str):
+        """
+        Mark a model as failed, temporarily disabling it.
+        
+        Args:
+            model: Model name that failed
+        """
+        self.availability_tracker.mark_failure(model)
     
-    def _route_by_difficulty(self, model: str, difficulty_rating: float) -> Optional[BaseBackend]:
+    def mark_model_success(self, model: str):
+        """
+        Mark a model as successful.
+        
+        Args:
+            model: Model name that succeeded
+        """
+        self.availability_tracker.mark_success(model)
+    
+    
+    def _route_by_difficulty(self, model: str, difficulty_rating: float) -> Optional[Tuple[BaseBackend, str]]:
         """
         Route based on difficulty rating using the new configuration system.
         
@@ -164,41 +195,47 @@ class BackendRouter:
             difficulty_rating: Query difficulty rating (0-5)
             
         Returns:
-            Backend that handles the model for this difficulty range
+            Tuple of (Backend, selected_model) or None if no available model found
         """
         
         logger.debug(f"Checking difficulty routing for rating {difficulty_rating}")
         
-        # First, find which model to use based on difficulty
-        selected_model = None
-        for (min_diff, max_diff), model_name in self.difficulty_models.items():
-            logger.debug(f"Checking range [{min_diff}, {max_diff}] -> {model_name}")
+        # First, find which models to try based on difficulty
+        candidate_models = []
+        for (min_diff, max_diff), models in self.difficulty_models.items():
+            logger.debug(f"Checking range [{min_diff}, {max_diff}] -> {models}")
             if min_diff <= difficulty_rating <= max_diff:
-                selected_model = model_name
-                logger.debug(f"Difficulty {difficulty_rating} maps to model: {selected_model}")
+                candidate_models = models
+                logger.debug(f"Difficulty {difficulty_rating} maps to models: {candidate_models}")
                 break
         
-        if not selected_model:
+        if not candidate_models:
             logger.debug(f"No model mapping found for difficulty {difficulty_rating}")
             return None
         
-        # Now find the provider for this model
-        provider = self.model_providers.get(selected_model)
-        if not provider:
-            logger.debug(f"No provider mapping found for model {selected_model}")
-            return None
+        # Try each model in order until we find one that's available
+        for candidate_model in candidate_models:
+            # Check if the model is available (not temporarily disabled)
+            if not self.availability_tracker.is_available(candidate_model):
+                logger.debug(f"Model {candidate_model} is temporarily disabled, skipping")
+                continue
+            
+            # Find the provider for this model
+            provider = self.model_providers.get(candidate_model)
+            if not provider:
+                logger.debug(f"No provider mapping found for model {candidate_model}")
+                continue
+            
+            # Get the backend for this provider
+            backend = self.backends.get(provider)
+            if backend:
+                logger.debug(f"Selected backend: {backend.name} (via model {candidate_model})")
+                return (backend, candidate_model)
+            else:
+                logger.debug(f"Backend {provider} not available")
         
-        # Get the backend for this provider
-        backend = self.backends.get(provider)
-        if backend:
-            logger.debug(f"Selected backend: {backend.name} (via model {selected_model})")
-            # Store the selected model for later use
-            # This is a bit of a hack but allows the backend to know which model to use
-            backend._difficulty_selected_model = selected_model
-            return backend
-        else:
-            logger.debug(f"Backend {provider} not available")
-            return None
+        logger.debug(f"No available models found for difficulty {difficulty_rating}")
+        return None
     
     
     def get_backend_for_model(self, model: str) -> Optional[str]:

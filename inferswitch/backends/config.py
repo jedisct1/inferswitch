@@ -5,7 +5,7 @@ Backend configuration management.
 import os
 import json
 import logging
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from pathlib import Path
 from .base import BackendConfig
 
@@ -235,12 +235,12 @@ class BackendConfigManager:
         return overrides
     
     @staticmethod
-    def get_difficulty_model_mapping() -> Dict[Tuple[float, float], str]:
+    def get_difficulty_model_mapping() -> Dict[Tuple[float, float], List[str]]:
         """
         Get mapping from difficulty ranges to model names.
         
         Returns:
-            Dictionary mapping (min_difficulty, max_difficulty) tuples to model names
+            Dictionary mapping (min_difficulty, max_difficulty) tuples to lists of model names
         """
         mappings = {}
         
@@ -253,7 +253,7 @@ class BackendConfigManager:
                     difficulty_models = file_config.get("difficulty_models", {})
                     
                     # Convert from JSON format to tuple keys
-                    for range_str, model in difficulty_models.items():
+                    for range_str, models in difficulty_models.items():
                         # Parse range string like "0.0-0.3" or "[0.0,0.3]" or single values like "3"
                         range_str = range_str.strip("[]")
                         if "-" in range_str:
@@ -264,7 +264,10 @@ class BackendConfigManager:
                             # Single value - treat as exact match range (e.g., "3" -> (3.0, 3.0))
                             try:
                                 value = float(range_str.strip())
-                                mappings[(value, value)] = model
+                                # Ensure models is always a list
+                                if isinstance(models, str):
+                                    models = [models]
+                                mappings[(value, value)] = models
                                 continue
                             except ValueError:
                                 logger.warning(f"Invalid difficulty value: {range_str}")
@@ -274,7 +277,10 @@ class BackendConfigManager:
                             try:
                                 min_d = float(parts[0].strip())
                                 max_d = float(parts[1].strip())
-                                mappings[(min_d, max_d)] = model
+                                # Ensure models is always a list
+                                if isinstance(models, str):
+                                    models = [models]
+                                mappings[(min_d, max_d)] = models
                             except ValueError:
                                 logger.warning(f"Invalid difficulty range format: {range_str}")
             except Exception as e:
@@ -384,6 +390,44 @@ class BackendConfigManager:
             oauth_config["client_id"] = os.environ["OAUTH_CLIENT_ID"]
         
         return oauth_config
+    
+    @staticmethod
+    def get_model_availability_config() -> Dict[str, Any]:
+        """
+        Get model availability configuration (for temporary disabling on failure).
+        
+        Returns:
+            Dictionary with:
+            - disable_duration_seconds: How long to disable a model after failure (default: 300)
+            - max_retries: Max number of retries before disabling (default: 1)
+        """
+        config = {
+            "disable_duration_seconds": 300,  # 5 minutes default
+            "max_retries": 1
+        }
+        
+        # Load from environment
+        if os.environ.get("INFERSWITCH_MODEL_DISABLE_DURATION"):
+            try:
+                config["disable_duration_seconds"] = int(os.environ["INFERSWITCH_MODEL_DISABLE_DURATION"])
+            except ValueError:
+                pass
+        
+        # Load from config file
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    availability_config = file_config.get("model_availability", {})
+                    if "disable_duration_seconds" in availability_config:
+                        config["disable_duration_seconds"] = availability_config["disable_duration_seconds"]
+                    if "max_retries" in availability_config:
+                        config["max_retries"] = availability_config["max_retries"]
+            except Exception:
+                pass
+        
+        return config
     
     @staticmethod
     def should_force_difficulty_routing() -> bool:

@@ -45,7 +45,7 @@ async def create_message_v2(
         logger.debug(f"Cache check for model={request.model}, messages={len(request_dict.get('messages', []))}")
     
     if cached_response is not None:
-        logger.info(f"Cache HIT - Skipping MLX difficulty computation - Returning cached response")
+        logger.info("Cache HIT - Skipping MLX difficulty computation - Returning cached response")
         
         # Log the request without difficulty rating for cache hits
         log_request("/v1/messages", request_dict, None)
@@ -132,7 +132,7 @@ async def create_message_v2(
                     extra_kwargs = {k: v for k, v in request_dict.items() 
                                   if k not in ['messages', 'model', 'system', 'max_tokens', 'temperature']}
                     
-                    
+                    has_error = False
                     async for event in backend.create_message_stream(
                         messages=messages,
                         model=effective_model,
@@ -150,8 +150,18 @@ async def create_message_v2(
                         # Forward all events without router injection to prevent duplication
                         # Router messages are already added by the backend when needed
                         yield f"event: {event_type}\ndata: {json.dumps(event)}\n\n".encode('utf-8')
+                    
+                    # Mark success only if we completed without error
+                    if not has_error:
+                        router.mark_model_success(effective_model)
                         
                 except BackendError as e:
+                    has_error = True
+                    # Check if this is a rate limit or credit error
+                    if e.status_code in [429, 402] or "credit" in str(e).lower() or "rate" in str(e).lower():
+                        router.mark_model_failure(effective_model)
+                        logger.warning(f"Marked model {effective_model} as failed due to: {e}")
+                    
                     # Send error as SSE event
                     error_event = {
                         "type": "error",
@@ -206,14 +216,29 @@ async def create_message_v2(
                 cache.set(request_dict, response_dict)
                 logger.info(f"Cached response for model={request.model}")
             
+            # Mark the model as successful
+            router.mark_model_success(effective_model)
+            
             return JSONResponse(content=response_dict)
             
     except BackendError as e:
+        # Check if this is a rate limit or credit error that should disable the model
+        if e.status_code in [429, 402] or "credit" in str(e).lower() or "rate" in str(e).lower():
+            # Mark the model as failed if we know which model was used
+            if 'effective_model' in locals():
+                router.mark_model_failure(effective_model)
+                logger.warning(f"Marked model {effective_model} as failed due to: {e}")
+        
         raise HTTPException(
             status_code=e.status_code or 500,
             detail=e.to_dict()
         )
     except Exception as e:
+        # For other errors, also consider marking the model as failed
+        if 'effective_model' in locals() and ("credit" in str(e).lower() or "insufficient" in str(e).lower()):
+            router.mark_model_failure(effective_model)
+            logger.warning(f"Marked model {effective_model} as failed due to: {e}")
+        
         raise HTTPException(
             status_code=500,
             detail={"error": {"type": "internal_error", "message": str(e)}}

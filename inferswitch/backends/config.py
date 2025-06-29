@@ -455,3 +455,31 @@ class BackendConfigManager:
                 pass
         
         return False
+    
+    @staticmethod
+    def get_mlx_model() -> str:
+        """
+        Get the MLX model to use for difficulty rating.
+        
+        Returns:
+            MLX model name (defaults to "mlx-community/Qwen2.5-Coder-7B-8bit")
+        """
+        # Check environment variable first
+        mlx_model = os.environ.get("INFERSWITCH_MLX_MODEL")
+        if mlx_model:
+            return mlx_model
+        
+        # Load from config file
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    mlx_model = file_config.get("mlx_model")
+                    if mlx_model:
+                        return mlx_model
+            except Exception:
+                pass
+        
+        # Default model
+        return "mlx-community/Qwen2.5-Coder-7B-8bit"

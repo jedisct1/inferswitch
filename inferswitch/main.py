@@ -70,7 +70,9 @@ async def startup_event():
     
     # Load MLX model (optional - don't fail if it doesn't work)
     try:
-        success, message = mlx_model_manager.load_model("mlx-community/Qwen2.5-Coder-7B-8bit")
+        from .backends.config import BackendConfigManager
+        mlx_model = BackendConfigManager.get_mlx_model()
+        success, message = mlx_model_manager.load_model(mlx_model)
         logger.info(f"MLX model loading: {message}")
         if not success:
             logger.warning("MLX model failed to load. Difficulty rating will be disabled.")

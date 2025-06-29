@@ -1,5 +1,6 @@
 {
   "force_difficulty_routing": true,
+  "mlx_model": "mlx-community/Qwen2.5-Coder-7B-8bit",
   "difficulty_models": {
     "0-1": "all-hands_openhands-lm-32b-v0.1",
     "2": "claude-3-5-haiku-20241022",

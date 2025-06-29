@@ -63,6 +63,15 @@ async def startup_event():
         "openai": OpenAIBackend,
         "openrouter": OpenAIBackend
     }
+    
+    # Add MLX backend if MLX is available
+    try:
+        from .backends.mlx import MLXBackend
+        backend_classes["mlx"] = MLXBackend
+        logger.info("MLX backend registered")
+    except ImportError:
+        logger.info("MLX backend not available (MLX not installed)")
+    
     await backend_registry.initialize(backend_classes)
     
     # Create legacy client for backward compatibility

@@ -95,6 +95,12 @@ class BackendConfigManager:
                 api_key=os.environ.get("OPENROUTER_API_KEY"),
                 models=None  # Will be fetched dynamically
             ),
+            "mlx": BackendConfig(
+                name="mlx",
+                base_url="local",  # MLX runs locally
+                api_key=None,  # No API key needed
+                models=["builtin"]  # Special model name for MLX
+            ),
         }
     
     @staticmethod

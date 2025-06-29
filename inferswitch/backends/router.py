@@ -272,3 +272,23 @@ class BackendRouter:
             elif "*" in self.model_overrides:
                 return self.model_overrides["*"]
         return requested_model
+    
+    def all_difficulty_models_are_same(self) -> bool:
+        """
+        Check if all difficulty levels use the same model.
+        
+        Returns:
+            True if all difficulty ranges map to the same model(s), False otherwise
+        """
+        if not self.difficulty_models:
+            return False
+        
+        # Get the first model list as reference
+        reference_models = None
+        for models in self.difficulty_models.values():
+            if reference_models is None:
+                reference_models = models
+            elif models != reference_models:
+                return False
+        
+        return True

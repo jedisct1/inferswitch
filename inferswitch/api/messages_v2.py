@@ -73,11 +73,19 @@ async def create_message_v2(
     # Cache miss - compute difficulty rating with MLX
     logger.debug("Cache MISS - Computing difficulty rating with MLX")
     
-    # Convert request to chat template format for difficulty rating
-    chat_messages = convert_to_chat_template(request_dict)
+    # Get backend router to check if we need difficulty rating
+    router = backend_registry.get_router()
     
-    # Rate the difficulty of the query
-    difficulty_rating = mlx_model_manager.rate_query_difficulty(chat_messages)
+    # Check if all difficulty models are the same - if so, skip MLX classifier
+    if router.all_difficulty_models_are_same():
+        logger.debug("All difficulty levels use the same model - skipping MLX classifier")
+        difficulty_rating = 0.0  # Default rating when all models are the same
+    else:
+        # Convert request to chat template format for difficulty rating
+        chat_messages = convert_to_chat_template(request_dict)
+        
+        # Rate the difficulty of the query
+        difficulty_rating = mlx_model_manager.rate_query_difficulty(chat_messages)
     
     # Log the request with difficulty rating
     log_request("/v1/messages", request_dict, difficulty_rating)
@@ -88,9 +96,6 @@ async def create_message_v2(
         if isinstance(last_msg.get('content'), str):
             query_preview = last_msg['content'][:50].replace('\n', ' ')
             logger.debug(f"Query: {query_preview}...")
-    
-    # Get backend router
-    router = backend_registry.get_router()
     
     try:
         # Get the actual model to use (may be overridden)

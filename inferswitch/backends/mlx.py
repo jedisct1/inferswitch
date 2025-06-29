@@ -214,12 +214,17 @@ class MLXBackend(BaseBackend):
     def _generate_sync(self, prompt: str, max_tokens: Optional[int], temperature: Optional[float]) -> str:
         """Synchronous generation function to run in thread pool."""
         import mlx_lm
+        from mlx_lm.sample_utils import make_sampler
+        
+        # Create sampler with temperature
+        sampler = make_sampler(temp=temperature or 0.7)
+        
         return mlx_lm.generate(
             model=mlx_model_manager.model,
             tokenizer=mlx_model_manager.tokenizer,
             prompt=prompt,
             max_tokens=max_tokens or 1024,
-            temp=temperature or 0.7,
+            sampler=sampler,
             verbose=False
         )
     

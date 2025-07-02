@@ -51,7 +51,7 @@ class ExpertClassifier:
         """Get the current expert definitions."""
         return self.expert_definitions.copy()
     
-    def load_model(self, model_name: str = "mlx-community/Qwen2.5-Coder-7B-8bit") -> tuple[bool, str]:
+    def load_model(self, model_name: str = "jedisct1/arch-router-1.5b") -> tuple[bool, str]:
         """
         Load an MLX model for expert classification.
         

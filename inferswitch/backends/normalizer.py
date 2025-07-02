@@ -55,62 +55,6 @@ class ResponseNormalizer:
         
         return anthropic_response
     
-    @staticmethod
-    def anthropic_to_openai(anthropic_response: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Convert Anthropic response format to OpenAI format.
-        
-        Args:
-            anthropic_response: Response from Anthropic API
-            
-        Returns:
-            Response in OpenAI format
-        """
-        # Extract content
-        content = ""
-        if anthropic_response.get("content"):
-            for block in anthropic_response["content"]:
-                if block.get("type") == "text":
-                    content += block.get("text", "")
-        
-        # Map stop reason
-        stop_reason_map = {
-            "end_turn": "stop",
-            "max_tokens": "length",
-            "tool_use": "function_call",
-            "stop_sequence": "stop",
-        }
-        stop_reason = anthropic_response.get("stop_reason", "end_turn")
-        finish_reason = stop_reason_map.get(stop_reason, "stop")
-        
-        # Map usage
-        usage = anthropic_response.get("usage", {})
-        openai_usage = {
-            "prompt_tokens": usage.get("input_tokens", 0),
-            "completion_tokens": usage.get("output_tokens", 0),
-            "total_tokens": usage.get("input_tokens", 0) + usage.get("output_tokens", 0),
-        }
-        
-        # Build OpenAI response
-        openai_response = {
-            "id": anthropic_response.get("id", "chatcmpl-unknown"),
-            "object": "chat.completion",
-            "created": int(anthropic_response.get("created_at", 0)),
-            "model": anthropic_response.get("model", "unknown"),
-            "choices": [
-                {
-                    "index": 0,
-                    "message": {
-                        "role": "assistant",
-                        "content": content,
-                    },
-                    "finish_reason": finish_reason,
-                }
-            ],
-            "usage": openai_usage,
-        }
-        
-        return openai_response
     
     @staticmethod
     def openai_to_anthropic_messages(openai_messages: List[Dict[str, Any]]) -> tuple[List[Dict[str, Any]], Optional[str]]:

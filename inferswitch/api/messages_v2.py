@@ -318,7 +318,12 @@ def _create_ok_response(request: MessagesRequest):
     
     if request.stream:
         async def generate():
-            async for event in generate_sse_events(response):
+            async for event in generate_sse_events(
+                message_id=response.id,
+                content=response.content[0].text if response.content else "",
+                model=response.model,
+                input_tokens=response.usage.input_tokens
+            ):
                 yield event
         
         return StreamingResponse(

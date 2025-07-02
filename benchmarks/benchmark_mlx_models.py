@@ -151,8 +151,8 @@ def benchmark_model(model_name: str):
 def main():
     """Main benchmark function."""
     models_to_test = [
-        "mlx-community/Qwen2.5-Coder-7B-8bit",  # Current model
-        "Qwen/Qwen2.5-Coder-0.5B",  # Previous model
+        "jedisct1/arch-router-1.5b",  # Current default model
+        "mlx-community/Qwen2.5-Coder-7B-8bit",  # Previous default model
     ]
     
     print("MLX Model Difficulty Rating Benchmark")

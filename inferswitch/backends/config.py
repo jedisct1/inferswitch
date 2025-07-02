@@ -462,7 +462,7 @@ class BackendConfigManager:
         Get the MLX model to use for difficulty rating.
         
         Returns:
-            MLX model name (defaults to "mlx-community/Qwen2.5-Coder-7B-8bit")
+            MLX model name (defaults to "jedisct1/arch-router-1.5b")
         """
         # Check environment variable first
         mlx_model = os.environ.get("INFERSWITCH_MLX_MODEL")
@@ -482,7 +482,7 @@ class BackendConfigManager:
                 pass
         
         # Default model
-        return "mlx-community/Qwen2.5-Coder-7B-8bit"
+        return "jedisct1/arch-router-1.5b"
     
     @staticmethod
     def get_expert_definitions() -> Dict[str, str]:

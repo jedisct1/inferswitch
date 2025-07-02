@@ -10,8 +10,8 @@ from .chat_template import (
     remove_oldest_message_pair
 )
 from .helpers import estimate_tokens
-from .streaming import generate_sse_events, generate_sse_from_response
-from .cache import get_cache, RequestCache
+from .streaming import generate_sse_events
+from .cache import get_cache
 
 __all__ = [
     "log_request",
@@ -22,7 +22,5 @@ __all__ = [
     "remove_oldest_message_pair",
     "estimate_tokens",
     "generate_sse_events",
-    "generate_sse_from_response",
-    "get_cache",
-    "RequestCache"
+    "get_cache"
 ]

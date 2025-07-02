@@ -83,10 +83,16 @@ class AnthropicBackend(BaseBackend):
         # Get the effective model to use
         effective_model = self.get_effective_model(model)
         
-        # Check if this is a Claude 4 model that needs special beta header
+        # Check if this model needs thinking support
         anthropic_beta = kwargs.get("anthropic_beta")
-        if effective_model in ["claude-opus-4-20250514", "claude-sonnet-4-20250514"]:
-            # Claude 4 models need the interleaved-thinking beta header
+        thinking_models = [
+            "claude-opus-4-20250514", 
+            "claude-sonnet-4-20250514"
+            # Note: claude-3-5-sonnet-20241022 and claude-3-5-haiku-20241022 do not support thinking mode
+        ]
+        
+        if effective_model in thinking_models:
+            # These models need the interleaved-thinking beta header
             if not anthropic_beta:
                 anthropic_beta = "interleaved-thinking-2025-05-14"
             elif "interleaved-thinking-2025-05-14" not in anthropic_beta:

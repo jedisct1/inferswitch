@@ -27,7 +27,7 @@ class MLXModelManager:
         self.tokenizer = None
         self.model_name = None
     
-    def load_model(self, model_name: str = "qwen/qwen3-1.7b") -> Tuple[bool, str]:
+    def load_model(self, model_name: str = "jedisct1/arch-router-1.5b") -> Tuple[bool, str]:
         """
         Load an MLX model and tokenizer.
         

@@ -6,11 +6,9 @@
   <img src="https://img.shields.io/badge/FastAPI-0.100+-orange.svg" alt="FastAPI">
 </div>
 
-<img src="https://raw.github.com/jedisct1/inferswitch/master/.media/logo.png" alt="InferSwitch logo" width="600">
-
 ## Unified Gateway for Multiple LLM Providers
 
-InferSwitch is an intelligent API gateway that seamlessly routes requests between multiple Large Language Model (LLM) providers. It acts as a drop-in replacement for the Anthropic API while providing automatic failover, smart caching, and the ability to use local models for appropriate queries.
+InferSwitch is an intelligent API gateway that seamlessly routes requests between multiple Large Language Model (LLM) providers. It acts as a drop-in replacement for the Anthropic API while providing expertise-based routing, automatic failover, smart caching, and the ability to use local models through LM-Studio or other backends.
 
 ### Key Features
 
@@ -18,7 +16,7 @@ InferSwitch is an intelligent API gateway that seamlessly routes requests betwee
 
 🧠 **Custom Expert Routing** - Define your own AI experts with custom descriptions and let MLX intelligently route queries to the most appropriate specialist - no hardcoded patterns needed
 
-🎯 **MLX-Powered Classification** - Local AI models analyze queries to match them with your custom expert definitions using pure AI classification
+🎯 **MLX-Powered Classification** - Local AI models (default: `jedisct1/arch-router-1.5b`, optimized for routing) analyze queries to match them with your custom expert definitions using pure AI classification
 
 💾 **Smart Caching** - Reduce costs and latency with intelligent response caching that ignores irrelevant metadata
 
@@ -58,7 +56,7 @@ cd inferswitch
 uv sync
 
 # Run the server
-uv run python main.py
+uv run python -m inferswitch.main
 ```
 
 ### Install with pip
@@ -72,7 +70,7 @@ cd inferswitch
 pip install -r requirements.txt
 
 # Run the server
-python main.py
+python -m inferswitch.main
 ```
 
 ### Install as a Package
@@ -91,7 +89,7 @@ inferswitch
 
 1. **Start InferSwitch** (defaults to Anthropic backend):
 ```bash
-uv run python main.py
+uv run python -m inferswitch.main
 ```
 
 2. **Make your first request**:
@@ -112,7 +110,7 @@ curl -X POST http://localhost:1235/v1/messages \
 1. **Start LM-Studio** and load a model
 2. **Start InferSwitch** with LM-Studio backend:
 ```bash
-INFERSWITCH_BACKEND=lm-studio uv run python main.py
+INFERSWITCH_BACKEND=lm-studio uv run python -m inferswitch.main
 ```
 
 3. **All requests now route to your local model**:
@@ -132,7 +130,7 @@ curl -X POST http://localhost:1235/v1/messages \
 1. **Get an OpenRouter API key** from [openrouter.ai](https://openrouter.ai)
 2. **Start InferSwitch** with OpenRouter backend:
 ```bash
-OPENROUTER_API_KEY=your_key INFERSWITCH_BACKEND=openrouter uv run python main.py
+OPENROUTER_API_KEY=your_key INFERSWITCH_BACKEND=openrouter uv run python -m inferswitch.main
 ```
 
 3. **Access hundreds of models** through OpenRouter:
@@ -264,10 +262,10 @@ Create `inferswitch.config.json` in your working directory:
 
 ```json
 {
-  // Backend configurations
+  "_comment": "Backend configurations",
   "backends": {
     "anthropic": {
-      "api_key": "sk-ant-...",  // Optional if using env var
+      "api_key": "sk-ant-...",
       "timeout": 300
     },
     "lm-studio": {
@@ -284,20 +282,20 @@ Create `inferswitch.config.json` in your working directory:
     }
   },
 
-  // Model to backend mappings
+  "_comment_2": "Model to backend mappings",
   "model_providers": {
     "claude-3-haiku-20240307": "lm-studio",
     "gpt-3.5-turbo": "openai",
     "my-custom-model": "lm-studio"
   },
 
-  // Model override mappings
+  "_comment_3": "Model override mappings",
   "model_overrides": {
     "claude-3-5-sonnet-20241022": "claude-3-haiku-20240307",
     "gpt-4": "gpt-3.5-turbo"
   },
 
-  // Custom expert definitions (replaces difficulty-based routing)
+  "_comment_4": "Custom expert definitions (replaces difficulty-based routing)",
   "expert_definitions": {
     "coding_expert": "A programming specialist skilled in software development, debugging, and code optimization",
     "data_analyst": "A data expert focused on analysis, visualization, and statistical insights"
@@ -307,14 +305,17 @@ Create `inferswitch.config.json` in your working directory:
     "data_analyst": ["claude-3-opus-20240229"]
   },
 
-  // OAuth configuration (optional)
+  "_comment_5": "MLX model for classification",
+  "mlx_model": "jedisct1/arch-router-1.5b",
+
+  "_comment_6": "OAuth configuration (optional)",
   "providers_auth": {
     "anthropic": {
       "oauth": {}
     }
   },
 
-  // Fallback configuration
+  "_comment_7": "Fallback configuration",
   "fallback": {
     "provider": "anthropic",
     "model": "claude-3-haiku-20240307"
@@ -328,7 +329,7 @@ Create `inferswitch.config.json` in your working directory:
 | ---------------------------- | -------------------------------------- | ----------------------- |
 | `INFERSWITCH_BACKEND`        | Force all requests to specific backend | `anthropic`             |
 | `INFERSWITCH_FORCE_EXPERT_ROUTING` | Force expert-based routing for all requests | `false`                 |
-| `INFERSWITCH_MLX_MODEL`      | MLX model for expert classification    | `mlx-community/Qwen2.5-Coder-7B-8bit` |
+| `INFERSWITCH_MLX_MODEL`      | MLX model for expert classification    | `jedisct1/arch-router-1.5b` |
 | `ANTHROPIC_API_KEY`          | Anthropic API key                      | Required for Anthropic  |
 | `OPENAI_API_KEY`             | OpenAI API key                         | Required for OpenAI     |
 | `OPENROUTER_API_KEY`         | OpenRouter API key                     | Required for OpenRouter |
@@ -381,10 +382,10 @@ Replace any model transparently:
 
 ```bash
 # Replace all Claude requests with local model
-INFERSWITCH_MODEL_OVERRIDE="claude-3-5-sonnet-20241022:llama-3.1-8b" uv run python main.py
+INFERSWITCH_MODEL_OVERRIDE="claude-3-5-sonnet-20241022:llama-3.1-8b" uv run python -m inferswitch.main
 
 # Replace ALL models with a single model
-INFERSWITCH_DEFAULT_MODEL="llama-3.1-8b" uv run python main.py
+INFERSWITCH_DEFAULT_MODEL="llama-3.1-8b" uv run python -m inferswitch.main
 ```
 
 ### Automatic Model Fallback
@@ -489,7 +490,7 @@ Use your Claude.ai account instead of API keys:
 
 2. **Start InferSwitch** - it will prompt for authentication:
 ```bash
-uv run python main.py
+uv run python -m inferswitch.main
 # Follow the prompts to authenticate via Claude.ai
 ```
 
@@ -525,7 +526,7 @@ Add any OpenAI-compatible endpoint:
 
 1. **Enable caching** for repeated queries:
 ```bash
-CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python main.py
+CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python -m inferswitch.main
 ```
 
 2. **Use expert routing** to minimize costs:
@@ -538,7 +539,7 @@ CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python main.py
 curl http://localhost:1235/cache/stats
 
 # Enable debug logging
-LOG_LEVEL=DEBUG uv run python main.py
+LOG_LEVEL=DEBUG uv run python -m inferswitch.main
 ```
 
 ## Development

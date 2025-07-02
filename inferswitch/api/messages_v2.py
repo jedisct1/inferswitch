@@ -15,6 +15,7 @@ from ..utils import log_request, estimate_tokens, generate_sse_events
 from ..utils.cache import get_cache
 from ..utils.chat_template import convert_to_chat_template
 from ..mlx_model import mlx_model_manager
+from ..expertise_classifier import expert_classifier
 
 
 async def create_message_v2(
@@ -70,22 +71,57 @@ async def create_message_v2(
             # Return cached response as-is
             return JSONResponse(content=cached_response)
     
-    # Cache miss - compute difficulty rating with MLX
-    logger.debug("Cache MISS - Computing difficulty rating with MLX")
+    # Cache miss - compute routing classification with MLX
+    logger.debug("Cache MISS - Computing routing classification with MLX")
     
-    # Get backend router to check if we need difficulty rating
+    # Get backend router to check routing mode
     router = backend_registry.get_router()
+    routing_mode = router.routing_mode
     
-    # Check if all difficulty models are the same - if so, skip MLX classifier
-    if router.all_difficulty_models_are_same():
-        logger.debug("All difficulty levels use the same model - skipping MLX classifier")
-        difficulty_rating = 0.0  # Default rating when all models are the same
+    difficulty_rating = None
+    expertise_area = None
+    expert_name = None
+    
+    if routing_mode == 'expert':
+        # Check if all expert models are the same - if so, skip MLX classifier
+        if router.all_expert_models_are_same():
+            logger.debug("All experts use the same model - skipping expert classifier")
+            # Use the first expert as default
+            expert_definitions = router.expert_models
+            if expert_definitions:
+                expert_name = list(expert_definitions.keys())[0]
+        else:
+            # Convert request to chat template format for expert classification
+            chat_messages = convert_to_chat_template(request_dict)
+            
+            # Classify which expert should handle the query
+            expert_name = expert_classifier.classify_expert(chat_messages)
+    elif routing_mode == 'expertise':
+        # Check if all expertise models are the same - if so, skip MLX classifier
+        if router.all_expertise_models_are_same():
+            logger.debug("All expertise areas use the same model - skipping expertise classifier")
+            expertise_area = 'general'  # Default area when all models are the same
+        else:
+            # Convert request to chat template format for expertise classification
+            chat_messages = convert_to_chat_template(request_dict)
+            
+            # Classify the expertise area of the query (legacy)
+            from ..expertise_classifier import ExpertiseClassifier
+            legacy_classifier = ExpertiseClassifier()
+            expertise_area = legacy_classifier.classify_expertise(chat_messages)
+    elif routing_mode == 'difficulty':
+        # Check if all difficulty models are the same - if so, skip MLX classifier
+        if router.all_difficulty_models_are_same():
+            logger.debug("All difficulty levels use the same model - skipping MLX classifier")
+            difficulty_rating = 0.0  # Default rating when all models are the same
+        else:
+            # Convert request to chat template format for difficulty rating
+            chat_messages = convert_to_chat_template(request_dict)
+            
+            # Rate the difficulty of the query
+            difficulty_rating = mlx_model_manager.rate_query_difficulty(chat_messages)
     else:
-        # Convert request to chat template format for difficulty rating
-        chat_messages = convert_to_chat_template(request_dict)
-        
-        # Rate the difficulty of the query
-        difficulty_rating = mlx_model_manager.rate_query_difficulty(chat_messages)
+        logger.debug("Normal routing mode - no classification needed")
     
     # Log the request with difficulty rating
     log_request("/v1/messages", request_dict, difficulty_rating)
@@ -107,18 +143,31 @@ async def create_message_v2(
         backend = router.select_backend(
             model=actual_model,
             explicit_backend=x_backend,
-            difficulty_rating=difficulty_rating
+            difficulty_rating=difficulty_rating,
+            expertise_area=expertise_area,
+            expert_name=expert_name
         )
         
         # Get the effective model that will be used
         effective_model = actual_model
-        if hasattr(backend, '_difficulty_selected_model') and backend._difficulty_selected_model:
+        if hasattr(backend, '_expert_selected_model') and backend._expert_selected_model:
+            effective_model = backend._expert_selected_model
+        elif hasattr(backend, '_expertise_selected_model') and backend._expertise_selected_model:
+            effective_model = backend._expertise_selected_model
+        elif hasattr(backend, '_difficulty_selected_model') and backend._difficulty_selected_model:
             effective_model = backend._difficulty_selected_model
         elif hasattr(backend, '_fallback_model') and backend._fallback_model:
             effective_model = backend._fallback_model
         
         # Single line routing summary
-        logger.info(f"Difficulty: {difficulty_rating} - Routing to {backend.name} {effective_model}")
+        if expert_name:
+            logger.info(f"Expert: {expert_name} - Routing to {backend.name} {effective_model}")
+        elif expertise_area:
+            logger.info(f"Expertise: {expertise_area} - Routing to {backend.name} {effective_model}")
+        elif difficulty_rating is not None:
+            logger.info(f"Difficulty: {difficulty_rating} - Routing to {backend.name} {effective_model}")
+        else:
+            logger.info(f"Normal routing to {backend.name} {effective_model}")
         
         # Extract messages and system from request
         messages = request_dict.get("messages", [])

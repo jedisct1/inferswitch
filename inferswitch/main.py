@@ -12,6 +12,7 @@ from .config import DEFAULT_HOST, DEFAULT_PORT, CACHE_ENABLED
 from .client import AnthropicClient
 from .api import count_tokens, get_chat_template, create_message_v2
 from .mlx_model import mlx_model_manager
+from .expertise_classifier import expert_classifier
 from .backends import backend_registry, AnthropicBackend, OpenAIBackend
 from .utils.oauth import oauth_manager
 
@@ -78,6 +79,28 @@ async def startup_event():
             logger.warning("MLX model failed to load. Difficulty rating will be disabled.")
     except Exception as e:
         logger.warning(f"MLX model loading error: {e}. Difficulty rating will be disabled.")
+    
+    # Load expert classifier (optional - don't fail if it doesn't work)
+    try:
+        from .backends.config import BackendConfigManager
+        
+        # Load expert definitions from config
+        expert_definitions = BackendConfigManager.get_expert_definitions()
+        if expert_definitions:
+            expert_classifier.set_expert_definitions(expert_definitions)
+            logger.info(f"Loaded {len(expert_definitions)} expert definitions: {list(expert_definitions.keys())}")
+            
+            # Load MLX model for classification
+            mlx_model = BackendConfigManager.get_mlx_model()
+            success, message = expert_classifier.load_model(mlx_model)
+            logger.info(f"Expert classifier loading: {message}")
+            if not success:
+                logger.warning("Expert classifier MLX model failed to load. Expert routing will be disabled.")
+        else:
+            logger.info("No expert definitions found in config. Expert routing disabled.")
+            
+    except Exception as e:
+        logger.warning(f"Expert classifier loading error: {e}. Expert routing will be disabled.")
 
 
 @app.on_event("shutdown")

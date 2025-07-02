@@ -16,15 +16,15 @@ InferSwitch is an intelligent API gateway that seamlessly routes requests betwee
 
 🚀 **Multi-Provider Support** - Route between Anthropic Claude, OpenAI GPT, OpenRouter models, local LM-Studio models, and any OpenAI-compatible endpoints
 
-🧠 **Intelligent Routing** - Automatically sends simple queries to fast local models and complex queries to powerful cloud models
+🧠 **Custom Expert Routing** - Define your own AI experts with custom descriptions and let MLX intelligently route queries to the most appropriate specialist - no hardcoded patterns needed
+
+🎯 **MLX-Powered Classification** - Local AI models analyze queries to match them with your custom expert definitions using pure AI classification
 
 💾 **Smart Caching** - Reduce costs and latency with intelligent response caching that ignores irrelevant metadata
 
 🔄 **Model Overrides** - Transparently replace expensive models with cheaper alternatives for development and testing
 
 🔐 **OAuth Support** - Use your Claude.ai account instead of managing API keys
-
-📊 **Difficulty Assessment** - Built-in MLX model rates query complexity to optimize routing decisions
 
 ## Table of Contents
 
@@ -147,47 +147,105 @@ curl -X POST http://localhost:1235/v1/messages \
   }'
 ```
 
-### Smart Routing Example
+### Custom Expert Routing Example
 
-Configure InferSwitch to automatically route based on query difficulty:
+Configure InferSwitch with your own AI experts for intelligent routing:
 
 1. **Create `inferswitch.config.json`**:
 ```json
 {
-  "force_difficulty_routing": true,
-  "difficulty_models": {
-    "0-1": ["all-hands_openhands-lm-32b-v0.1", "gpt-3.5-turbo"],
-    "2": ["claude-3-5-haiku-20241022", "gpt-4"],
-    "3": ["claude-3-7-sonnet-20250219", "gpt-4-turbo"],
-    "4": ["claude-sonnet-4-20250514"],
-    "5": ["claude-opus-4-20250514"]
+  "force_expert_routing": true,
+  "expert_definitions": {
+    "coding_specialist": "A coding-focused AI model optimized for programming tasks including writing code, debugging, code review, refactoring, explaining algorithms, and solving complex programming problems across multiple languages and frameworks.",
+    "vision_analyst": "A vision-capable multimodal AI model that can analyze images, screenshots, diagrams, charts, UI mockups, and visual content, providing detailed descriptions and insights about visual elements.",
+    "documentation_writer": "A model optimized for creating clear, comprehensive documentation including API docs, README files, technical guides, code comments, user manuals, and converting complex technical concepts into readable content.",
+    "tool_executor": "A model specialized in function calling, API interactions, tool usage, structured data processing, and tasks requiring precise execution of external tools and integrations.",
+    "commit_generator": "A model optimized for generating concise, descriptive git commit messages, changelog entries, release notes, and version control-related text based on code changes and diffs.",
+    "reasoning_engine": "A model optimized for complex reasoning, mathematical problem-solving, logical analysis, step-by-step thinking, research tasks, and handling queries requiring deep analytical thinking.",
+    "fast_responder": "A lightweight, fast model optimized for quick responses to simple questions, basic coding tasks, quick explanations, and scenarios where speed is prioritized over complexity.",
+    "multimodal_specialist": "A comprehensive multimodal model capable of handling text, images, and complex mixed-content tasks that require understanding and processing multiple types of input simultaneously.",
+    "general_assistant": "A well-rounded generalist model capable of handling diverse tasks across multiple domains when no specific model capability is clearly required for the query."
+  },
+  "expert_models": {
+    "coding_specialist": ["claude-3-5-sonnet-20241022", "qwen/qwen-2.5-coder-32b", "openhands-lm-32b"],
+    "vision_analyst": ["claude-3-5-sonnet-20241022", "gpt-4-vision-preview"],
+    "documentation_writer": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
+    "tool_executor": ["claude-3-5-sonnet-20241022", "gpt-4"],
+    "commit_generator": ["claude-3-5-haiku-20241022", "qwen/qwen-2.5-3b"],
+    "reasoning_engine": ["claude-3-opus-20240229", "claude-3-5-sonnet-20241022"],
+    "fast_responder": ["claude-3-haiku-20240307", "qwen/qwen-2.5-3b"],
+    "multimodal_specialist": ["claude-3-5-sonnet-20241022", "gpt-4-vision-preview"],
+    "general_assistant": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
   },
   "model_providers": {
-    "qwen/qwen3-1.7b": "lm-studio",
-    "qwen/qwen3-30b-a3b": "lm-studio",
-    "all-hands_openhands-lm-32b-v0.1": "lm-studio",
-    "claude-3-5-haiku-20241022": "anthropic",
     "claude-3-5-sonnet-20241022": "anthropic",
-    "claude-3-7-sonnet-20250219": "anthropic",
-    "claude-sonnet-4-20250514": "anthropic",
-    "claude-opus-4-20250514": "anthropic"
+    "claude-3-opus-20240229": "anthropic",
+    "claude-3-5-haiku-20241022": "anthropic",
+    "claude-3-haiku-20240307": "anthropic",
+    "gpt-4": "openai",
+    "gpt-3.5-turbo": "openai",
+    "qwen/qwen-2.5-coder-32b": "lm-studio"
   },
   "fallback": {
-    "provider": "lm-studio",
-    "model": "all-hands_openhands-lm-32b-v0.1"
-  },
-  "providers_auth": {
-    "anthropic": {
-      "oauth": {}
-    }
+    "provider": "anthropic",
+    "model": "claude-3-haiku-20240307"
   }
 }
 ```
 
-2. **Now InferSwitch automatically routes**:
-   - "What is 2+2?" → Local model (difficulty ~0)
-   - "Write a Python function" → Sonnet (difficulty ~3)
-   - "Design a distributed system" → Opus (difficulty ~10)
+2. **Now InferSwitch intelligently routes using MLX classification**:
+   - "Debug this React component" → `coding_specialist` → Claude 3.5 Sonnet
+   - "Analyze this screenshot of an error" → `vision_analyst` → Claude 3.5 Sonnet
+   - "Write API documentation" → `documentation_writer` → Claude 3.5 Haiku
+   - "Call this REST API with parameters" → `tool_executor` → Claude 3.5 Sonnet
+   - "Generate commit message for these changes" → `commit_generator` → Claude 3.5 Haiku
+   - "Solve this complex math problem" → `reasoning_engine` → Claude 3 Opus
+   - "What's 2+2?" → `fast_responder` → Claude 3 Haiku
+   - "Analyze this image and write a report" → `multimodal_specialist` → Claude 3.5 Sonnet
+   - "Help me plan my day" → `general_assistant` → Claude 3.5 Sonnet
+
+The MLX model analyzes each query against your expert descriptions and routes to the best match - no keyword patterns or hardcoded rules needed!
+
+## Custom Expert System
+
+InferSwitch's most powerful feature is its custom expert routing system. Unlike traditional rule-based routing, InferSwitch uses MLX language models to intelligently classify queries and route them to your custom-defined experts.
+
+### Why Custom Experts?
+
+- **No Hardcoded Patterns**: MLX models understand context and meaning, not just keywords
+- **Domain-Specific Routing**: Create experts for any field - medical, legal, technical, creative
+- **Flexible Definitions**: Define experts with natural language descriptions
+- **Intelligent Matching**: Queries are matched based on semantic similarity to expert descriptions
+- **Multi-Backend Support**: Route different experts to different model providers
+
+### Quick Expert Setup
+
+1. **Define Your Experts** in `inferswitch.config.json`:
+```json
+{
+  "force_expert_routing": true,
+  "expert_definitions": {
+    "coding_specialist": "A coding-focused AI model optimized for programming tasks...",
+    "vision_analyst": "A vision-capable multimodal AI model...",
+    "fast_responder": "A lightweight, fast model for quick responses..."
+  }
+}
+```
+
+2. **Map Experts to Models**:
+```json
+{
+  "expert_models": {
+    "coding_specialist": ["claude-3-5-sonnet-20241022", "qwen/qwen-coder"],
+    "vision_analyst": ["claude-3-5-sonnet-20241022", "gpt-4-vision"], 
+    "fast_responder": ["claude-3-haiku-20240307", "qwen/qwen-3b"]
+  }
+}
+```
+
+3. **Start InferSwitch** - it automatically routes based on expert classification!
+
+See the [Custom Expert Documentation](docs/custom_experts.md) for detailed configuration examples.
 
 ## Configuration
 
@@ -239,11 +297,14 @@ Create `inferswitch.config.json` in your working directory:
     "gpt-4": "gpt-3.5-turbo"
   },
 
-  // Difficulty-based routing
-  "difficulty_models": {
-    "0-3": "claude-3-haiku-20240307",
-    "3-7": "claude-3-5-sonnet-20241022",
-    "7-10": "claude-3-opus-20240229"
+  // Custom expert definitions (replaces difficulty-based routing)
+  "expert_definitions": {
+    "coding_expert": "A programming specialist skilled in software development, debugging, and code optimization",
+    "data_analyst": "A data expert focused on analysis, visualization, and statistical insights"
+  },
+  "expert_models": {
+    "coding_expert": ["claude-3-5-sonnet-20241022"],
+    "data_analyst": ["claude-3-opus-20240229"]
   },
 
   // OAuth configuration (optional)
@@ -266,6 +327,8 @@ Create `inferswitch.config.json` in your working directory:
 | Variable                     | Description                            | Default                 |
 | ---------------------------- | -------------------------------------- | ----------------------- |
 | `INFERSWITCH_BACKEND`        | Force all requests to specific backend | `anthropic`             |
+| `INFERSWITCH_FORCE_EXPERT_ROUTING` | Force expert-based routing for all requests | `false`                 |
+| `INFERSWITCH_MLX_MODEL`      | MLX model for expert classification    | `mlx-community/Qwen2.5-Coder-7B-8bit` |
 | `ANTHROPIC_API_KEY`          | Anthropic API key                      | Required for Anthropic  |
 | `OPENAI_API_KEY`             | OpenAI API key                         | Required for OpenAI     |
 | `OPENROUTER_API_KEY`         | OpenRouter API key                     | Required for OpenRouter |
@@ -288,26 +351,29 @@ InferSwitch selects backends using this priority order:
 
 1. **Explicit Header** - `x-backend: lm-studio` in request
 2. **Environment Override** - `INFERSWITCH_BACKEND=lm-studio`
-3. **Difficulty Routing** - Based on query complexity (if configured)
-4. **Model Mapping** - Direct model → backend mapping
-5. **Pattern Matching** - e.g., "claude-*" → anthropic
-6. **Fallback** - Configured fallback or default to anthropic
+3. **Expert Routing** - Based on custom expert classification (if configured)
+4. **Expertise Routing** - Based on predefined expertise areas (legacy)
+5. **Difficulty Routing** - Based on query complexity (legacy)
+6. **Model Mapping** - Direct model → backend mapping
+7. **Fallback** - Configured fallback or default to anthropic
 
-### Difficulty-Based Routing
+### Custom Expert-Based Routing
 
-InferSwitch can analyze each query and route to appropriate backends:
+InferSwitch uses MLX models to intelligently classify queries and route them to your custom-defined experts:
 
-- **Difficulty 0-1**: Simple queries (definitions, basic math)
-  - Examples: "What is 2+2?", "Define HTTP"
-  - Best for: Fast local models
+- **Capability-Based Experts**: Define experts based on actual AI model capabilities
+  - Examples: "coding_specialist", "vision_analyst", "reasoning_engine", "fast_responder"
+  - MLX analyzes queries against model capabilities to find the best match
 
-- **Difficulty 1-3**: Moderate queries (explanations, simple code)
-  - Examples: "Explain recursion", "Write a sorting function"
-  - Best for: Capable local or mid-tier cloud models
+- **No Hardcoded Patterns**: Pure AI-based classification without keyword matching
+  - Query: "Debug this memory leak in Python" → Expert: "coding_specialist"
+  - Query: "Analyze this screenshot" → Expert: "vision_analyst"
+  - Query: "Solve this complex equation" → Expert: "reasoning_engine"
 
-- **Difficulty 3-5**: Complex queries (architecture, debugging)
-  - Examples: "Design a microservices system", "Debug this race condition"
-  - Best for: State-of-the-art cloud models
+- **Optimized Model Assignment**: Route each expert to models with matching capabilities
+  - Coding tasks → Code-optimized models (Sonnet, Qwen Coder, OpenHands)
+  - Vision tasks → Multimodal models (Claude Sonnet, GPT-4 Vision)
+  - Simple tasks → Fast, lightweight models (Haiku, small local models)
 
 ### Model Overrides
 
@@ -327,9 +393,9 @@ InferSwitch provides automatic fallback when models fail due to rate limits or i
 
 ```json
 {
-  "difficulty_models": {
-    "0-3": ["claude-3-haiku-20240307", "gpt-3.5-turbo", "llama-3.1-8b"],
-    "3-5": ["claude-3-5-sonnet-20241022", "gpt-4-turbo", "claude-3-opus-20240229"]
+  "expert_models": {
+    "ai_researcher": ["claude-opus-4-20250514", "claude-3-opus-20240229", "claude-3-5-sonnet-20241022"],
+    "code_developer": ["claude-3-5-sonnet-20241022", "qwen/qwen-2.5-coder-32b", "claude-3-haiku-20240307"]
   },
   "model_availability": {
     "disable_duration_seconds": 300  // 5 minutes
@@ -462,9 +528,9 @@ Add any OpenAI-compatible endpoint:
 CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python main.py
 ```
 
-2. **Use difficulty routing** to minimize costs:
-   - Configure local models for simple queries
-   - Reserve expensive models for complex tasks
+2. **Use expert routing** to minimize costs:
+   - Configure local models for simple queries via general assistant experts
+   - Reserve expensive models for specialized expert tasks
 
 3. **Monitor performance**:
 ```bash
@@ -488,7 +554,8 @@ done
 
 # Run specific test suites
 uv run python tests/test_api.py              # Core API tests
-uv run python tests/test_difficulty_routing.py # Routing logic
+uv run python tests/test_custom_experts.py   # Custom expert routing
+uv run python tests/test_difficulty_routing.py # Legacy routing logic
 uv run python tests/test_cache.py            # Caching functionality
 uv run python tests/test_streaming.py        # Streaming responses
 ```

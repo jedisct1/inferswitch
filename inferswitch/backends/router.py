@@ -25,9 +25,15 @@ class BackendRouter:
         self.backends = backends
         self.model_overrides = BackendConfigManager.get_model_overrides()
         self.difficulty_models = BackendConfigManager.get_difficulty_model_mapping()
+        self.expertise_models = BackendConfigManager.get_expertise_model_mapping()
+        self.expert_models = BackendConfigManager.get_expert_model_mapping()
+        self.expert_definitions = BackendConfigManager.get_expert_definitions()
         self.model_providers = BackendConfigManager.get_model_provider_mapping()
         self.fallback_config = BackendConfigManager.get_fallback_config()
         self.force_difficulty_routing = BackendConfigManager.should_force_difficulty_routing()
+        self.force_expertise_routing = BackendConfigManager.should_force_expertise_routing()
+        self.force_expert_routing = BackendConfigManager.should_force_expert_routing()
+        self.routing_mode = BackendConfigManager.get_routing_mode()
         
         # Initialize availability tracker
         availability_config = BackendConfigManager.get_model_availability_config()
@@ -39,7 +45,9 @@ class BackendRouter:
         self,
         model: str,
         explicit_backend: Optional[str] = None,
-        difficulty_rating: Optional[float] = None
+        difficulty_rating: Optional[float] = None,
+        expertise_area: Optional[str] = None,
+        expert_name: Optional[str] = None
     ) -> BaseBackend:
         """
         Select the appropriate backend for a request.
@@ -48,6 +56,8 @@ class BackendRouter:
             model: Model name requested
             explicit_backend: Explicitly requested backend (from header)
             difficulty_rating: Query difficulty rating (0-5)
+            expertise_area: Query expertise area (vision, coding, math, general, multimodal) - legacy
+            expert_name: Expert name from user-defined expert definitions
             
         Returns:
             Selected backend instance
@@ -56,7 +66,35 @@ class BackendRouter:
             ModelNotFoundError: If no suitable backend is found
         """
         
-        logger.debug(f"Backend selection: model={model}, difficulty={difficulty_rating}, explicit={explicit_backend}")
+        logger.debug(f"Backend selection: model={model}, difficulty={difficulty_rating}, expertise={expertise_area}, expert={expert_name}, explicit={explicit_backend}")
+        
+        # If force_expert_routing is enabled and we have an expert name,
+        # skip all other routing logic and go straight to expert-based routing
+        if self.force_expert_routing and expert_name is not None:
+            logger.debug(f"Force expert routing enabled, using expert-based routing for expert {expert_name}")
+            result = self._route_by_expert(model, expert_name)
+            if result:
+                backend, selected_model = result
+                # Store the selected model for the backend to use
+                backend._expert_selected_model = selected_model
+                logger.debug(f"Selected backend: {backend.name} (forced expert-based routing, model: {selected_model})")
+                return backend
+            else:
+                logger.debug(f"No backend found for expert {expert_name}, continuing with normal routing")
+        
+        # If force_expertise_routing is enabled and we have an expertise area,
+        # skip all other routing logic and go straight to expertise-based routing
+        if self.force_expertise_routing and expertise_area is not None:
+            logger.debug(f"Force expertise routing enabled, using expertise-based routing for area {expertise_area}")
+            result = self._route_by_expertise(model, expertise_area)
+            if result:
+                backend, selected_model = result
+                # Store the selected model for the backend to use
+                backend._expertise_selected_model = selected_model
+                logger.debug(f"Selected backend: {backend.name} (forced expertise-based routing, model: {selected_model})")
+                return backend
+            else:
+                logger.debug(f"No backend found for expertise {expertise_area}, continuing with normal routing")
         
         # If force_difficulty_routing is enabled and we have a difficulty rating,
         # skip all other routing logic and go straight to difficulty-based routing
@@ -121,7 +159,33 @@ class BackendRouter:
                     logger.debug(f"Selected backend: {backend.name} (forced by INFERSWITCH_BACKEND)")
                     return backend
         
-        # 3. Difficulty-based routing (if difficulty rating is provided)
+        # 3. Expert-based routing (if expert name is provided)
+        logger.debug("Checking expert-based routing")
+        if expert_name is not None:
+            result = self._route_by_expert(model, expert_name)
+            if result:
+                backend, selected_model = result
+                # Store the selected model for the backend to use
+                backend._expert_selected_model = selected_model
+                logger.debug(f"Selected backend: {backend.name} (expert-based routing, model: {selected_model})")
+                return backend
+            else:
+                logger.debug(f"No backend found for expert {expert_name}")
+        
+        # 4. Expertise-based routing (if expertise area is provided - legacy)
+        logger.debug("Checking expertise-based routing")
+        if expertise_area is not None:
+            result = self._route_by_expertise(model, expertise_area)
+            if result:
+                backend, selected_model = result
+                # Store the selected model for the backend to use
+                backend._expertise_selected_model = selected_model
+                logger.debug(f"Selected backend: {backend.name} (expertise-based routing, model: {selected_model})")
+                return backend
+            else:
+                logger.debug(f"No backend found for expertise {expertise_area}")
+        
+        # 5. Difficulty-based routing (if difficulty rating is provided and no expert/expertise routing)
         logger.debug("Checking difficulty-based routing")
         if difficulty_rating is not None:
             result = self._route_by_difficulty(model, difficulty_rating)
@@ -134,7 +198,7 @@ class BackendRouter:
             else:
                 logger.debug(f"No backend found for difficulty {difficulty_rating}")
         
-        # 4. Check model to provider mapping
+        # 6. Check model to provider mapping
         logger.debug("Checking model to provider mapping")
         if model in self.model_providers:
             provider_name = self.model_providers[model]
@@ -142,7 +206,7 @@ class BackendRouter:
                 logger.debug(f"Selected backend: {provider_name} (model provider mapping)")
                 return self.backends[provider_name]
         
-        # 5. Use fallback configuration
+        # 7. Use fallback configuration
         logger.debug("Using fallback configuration")
         if self.fallback_config:
             fallback_provider, fallback_model = self.fallback_config
@@ -237,6 +301,100 @@ class BackendRouter:
         logger.debug(f"No available models found for difficulty {difficulty_rating}")
         return None
     
+    def _route_by_expertise(self, model: str, expertise_area: str) -> Optional[Tuple[BaseBackend, str]]:
+        """
+        Route based on expertise area using the expertise configuration system.
+        
+        Args:
+            model: Model name (will be overridden by expertise mapping)
+            expertise_area: Query expertise area (vision, coding, math, general, multimodal)
+            
+        Returns:
+            Tuple of (Backend, selected_model) or None if no available model found
+        """
+        
+        logger.debug(f"Checking expertise routing for area {expertise_area}")
+        
+        # Find models to try based on expertise area
+        candidate_models = self.expertise_models.get(expertise_area.lower(), [])
+        
+        if not candidate_models:
+            logger.debug(f"No model mapping found for expertise {expertise_area}")
+            return None
+        
+        logger.debug(f"Expertise {expertise_area} maps to models: {candidate_models}")
+        
+        # Try each model in order until we find one that's available
+        for candidate_model in candidate_models:
+            # Check if the model is available (not temporarily disabled)
+            if not self.availability_tracker.is_available(candidate_model):
+                logger.debug(f"Model {candidate_model} is temporarily disabled, skipping")
+                continue
+            
+            # Find the provider for this model
+            provider = self.model_providers.get(candidate_model)
+            if not provider:
+                logger.debug(f"No provider mapping found for model {candidate_model}")
+                continue
+            
+            # Get the backend for this provider
+            backend = self.backends.get(provider)
+            if backend:
+                logger.debug(f"Selected backend: {backend.name} (via model {candidate_model})")
+                return (backend, candidate_model)
+            else:
+                logger.debug(f"Backend {provider} not available")
+        
+        logger.debug(f"No available models found for expertise {expertise_area}")
+        return None
+    
+    def _route_by_expert(self, model: str, expert_name: str) -> Optional[Tuple[BaseBackend, str]]:
+        """
+        Route based on expert name using the expert configuration system.
+        
+        Args:
+            model: Model name (will be overridden by expert mapping)
+            expert_name: Expert name from user-defined expert definitions
+            
+        Returns:
+            Tuple of (Backend, selected_model) or None if no available model found
+        """
+        
+        logger.debug(f"Checking expert routing for expert {expert_name}")
+        
+        # Find models to try based on expert name
+        candidate_models = self.expert_models.get(expert_name, [])
+        
+        if not candidate_models:
+            logger.debug(f"No model mapping found for expert {expert_name}")
+            return None
+        
+        logger.debug(f"Expert {expert_name} maps to models: {candidate_models}")
+        
+        # Try each model in order until we find one that's available
+        for candidate_model in candidate_models:
+            # Check if the model is available (not temporarily disabled)
+            if not self.availability_tracker.is_available(candidate_model):
+                logger.debug(f"Model {candidate_model} is temporarily disabled, skipping")
+                continue
+            
+            # Find the provider for this model
+            provider = self.model_providers.get(candidate_model)
+            if not provider:
+                logger.debug(f"No provider mapping found for model {candidate_model}")
+                continue
+            
+            # Get the backend for this provider
+            backend = self.backends.get(provider)
+            if backend:
+                logger.debug(f"Selected backend: {backend.name} (via model {candidate_model})")
+                return (backend, candidate_model)
+            else:
+                logger.debug(f"Backend {provider} not available")
+        
+        logger.debug(f"No available models found for expert {expert_name}")
+        return None
+    
     
     def get_backend_for_model(self, model: str) -> Optional[str]:
         """
@@ -286,6 +444,46 @@ class BackendRouter:
         # Get the first model list as reference
         reference_models = None
         for models in self.difficulty_models.values():
+            if reference_models is None:
+                reference_models = models
+            elif models != reference_models:
+                return False
+        
+        return True
+    
+    def all_expert_models_are_same(self) -> bool:
+        """
+        Check if all experts use the same model.
+        
+        Returns:
+            True if all expert names map to the same model(s), False otherwise
+        """
+        if not self.expert_models:
+            return False
+        
+        # Get the first model list as reference
+        reference_models = None
+        for models in self.expert_models.values():
+            if reference_models is None:
+                reference_models = models
+            elif models != reference_models:
+                return False
+        
+        return True
+    
+    def all_expertise_models_are_same(self) -> bool:
+        """
+        Check if all expertise areas use the same model.
+        
+        Returns:
+            True if all expertise areas map to the same model(s), False otherwise
+        """
+        if not self.expertise_models:
+            return False
+        
+        # Get the first model list as reference
+        reference_models = None
+        for models in self.expertise_models.values():
             if reference_models is None:
                 reference_models = models
             elif models != reference_models:

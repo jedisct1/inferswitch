@@ -1,17 +1,32 @@
 {
-  "force_difficulty_routing": true,
-  "mlx_model": "mlx-community/Qwen2.5-Coder-7B-8bit",
-  "difficulty_models": {
-    "0-1": "all-hands_openhands-lm-32b-v0.1",
-    "2": "claude-3-5-haiku-20241022",
-    "3": "claude-3-7-sonnet-20250219",
-    "4": "claude-sonnet-4-20250514",
-    "5": "claude-opus-4-20250514"
+  "force_expert_routing": true,
+  "expert_definitions": {
+    "coding_specialist": "A coding-focused AI model optimized for programming tasks including writing code, debugging, code review, refactoring, explaining algorithms, and solving complex programming problems across multiple languages and frameworks.",
+    "vision_analyst": "A vision-capable multimodal AI model that can analyze images, screenshots, diagrams, charts, UI mockups, and visual content, providing detailed descriptions and insights about visual elements.",
+    "documentation_writer": "A model optimized for creating clear, comprehensive documentation including API docs, README files, technical guides, code comments, user manuals, and converting complex technical concepts into readable content.",
+    "tool_executor": "A model specialized in function calling, API interactions, tool usage, structured data processing, and tasks requiring precise execution of external tools and integrations.",
+    "commit_generator": "A model optimized for generating concise, descriptive git commit messages, changelog entries, release notes, and version control-related text based on code changes and diffs.",
+    "reasoning_engine": "A model optimized for complex reasoning, mathematical problem-solving, logical analysis, step-by-step thinking, research tasks, and handling queries requiring deep analytical thinking.",
+    "fast_responder": "A lightweight, fast model optimized for quick responses to simple questions, basic coding tasks, quick explanations, and scenarios where speed is prioritized over complexity.",
+    "multimodal_specialist": "A comprehensive multimodal model capable of handling text, images, and complex mixed-content tasks that require understanding and processing multiple types of input simultaneously.",
+    "general_assistant": "A well-rounded generalist model capable of handling diverse tasks across multiple domains when no specific model capability is clearly required for the query."
+  },
+  "expert_models": {
+    "coding_specialist": ["claude-sonnet-4-20250514", "qwen/qwen3-30b-a3b", "openhands-lm-32b-v0.1"],
+    "vision_analyst": ["claude-3-5-sonnet-20241022", "claude-sonnet-4-20250514"],
+    "documentation_writer": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
+    "tool_executor": ["claude-3-5-sonnet-20241022", "qwen/qwen3-30b-a3b"],
+    "commit_generator": ["claude-3-5-haiku-20241022", "qwen/qwen3-1.7b"],
+    "reasoning_engine": ["claude-sonnet-4-20250514", "claude-opus-4-20250514"],
+    "fast_responder": ["claude-3-5-haiku-20241022", "qwen/qwen3-1.7b", "jan-nano-128k"],
+    "multimodal_specialist": ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022"],
+    "general_assistant": ["claude-3-5-sonnet-20241022", "qwen/qwen3-30b-a3b"]
   },
   "model_providers": {
     "qwen/qwen3-1.7b": "lm-studio",
     "qwen/qwen3-30b-a3b": "lm-studio",
-    "all-hands_openhands-lm-32b-v0.1": "lm-studio",
+    "openhands-lm-32b-v0.1": "lm-studio",
+    "jan-nano-128k": "lm-studio",
     "claude-3-5-haiku-20241022": "anthropic",
     "claude-3-5-sonnet-20241022": "anthropic",
     "claude-3-7-sonnet-20250219": "anthropic",

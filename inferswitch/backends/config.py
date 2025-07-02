@@ -483,3 +483,177 @@ class BackendConfigManager:
         
         # Default model
         return "mlx-community/Qwen2.5-Coder-7B-8bit"
+    
+    @staticmethod
+    def get_expert_definitions() -> Dict[str, str]:
+        """
+        Get user-defined expert definitions from configuration.
+        
+        Returns:
+            Dictionary mapping expert names to their descriptions
+        """
+        definitions = {}
+        
+        # Load from config file
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    definitions = file_config.get("expert_definitions", {})
+                        
+            except Exception as e:
+                logger.warning(f"Failed to load expert definitions: {e}")
+        
+        return definitions
+    
+    @staticmethod
+    def get_expert_model_mapping() -> Dict[str, List[str]]:
+        """
+        Get mapping from expert names to model names.
+        
+        Returns:
+            Dictionary mapping expert names to lists of model names
+        """
+        mappings = {}
+        
+        # Load from config file
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    expert_models = file_config.get("expert_models", {})
+                    
+                    # Ensure models are always lists
+                    for expert_name, models in expert_models.items():
+                        if isinstance(models, str):
+                            models = [models]
+                        mappings[expert_name] = models
+                        
+            except Exception as e:
+                logger.warning(f"Failed to load expert model mappings: {e}")
+        
+        return mappings
+    
+    @staticmethod
+    def get_expertise_model_mapping() -> Dict[str, List[str]]:
+        """
+        Get mapping from expertise areas to model names (legacy support).
+        
+        Returns:
+            Dictionary mapping expertise areas to lists of model names
+        """
+        mappings = {}
+        
+        # Load from config file
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    expertise_models = file_config.get("expertise_models", {})
+                    
+                    # Ensure models are always lists
+                    for expertise, models in expertise_models.items():
+                        if isinstance(models, str):
+                            models = [models]
+                        mappings[expertise.lower()] = models
+                        
+            except Exception as e:
+                logger.warning(f"Failed to load expertise mappings: {e}")
+        
+        return mappings
+    
+    @staticmethod
+    def should_force_expert_routing() -> bool:
+        """
+        Check if expert-based routing should be forced for all requests.
+        
+        When enabled, all requests will be routed based on expert classification,
+        ignoring the model requested by the client.
+        
+        Returns:
+            True if expert routing should be forced for all requests
+        """
+        # Check environment variable first
+        if os.environ.get("INFERSWITCH_FORCE_EXPERT_ROUTING"):
+            return os.environ["INFERSWITCH_FORCE_EXPERT_ROUTING"].lower() in ["true", "1", "yes", "on"]
+        
+        # Load from config file
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    return file_config.get("force_expert_routing", False)
+            except Exception:
+                pass
+        
+        return False
+    
+    @staticmethod
+    def should_force_expertise_routing() -> bool:
+        """
+        Check if expertise-based routing should be forced for all requests (legacy support).
+        
+        When enabled, all requests will be routed based on expertise classification,
+        ignoring the model requested by the client.
+        
+        Returns:
+            True if expertise routing should be forced for all requests
+        """
+        # Check environment variable first
+        if os.environ.get("INFERSWITCH_FORCE_EXPERTISE_ROUTING"):
+            return os.environ["INFERSWITCH_FORCE_EXPERTISE_ROUTING"].lower() in ["true", "1", "yes", "on"]
+        
+        # Load from config file
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    return file_config.get("force_expertise_routing", False)
+            except Exception:
+                pass
+        
+        return False
+    
+    @staticmethod
+    def get_routing_mode() -> str:
+        """
+        Get the current routing mode: 'expert', 'expertise', 'difficulty', or 'normal'.
+        
+        Returns:
+            Routing mode string
+        """
+        # Check for explicit expert routing (new system)
+        if BackendConfigManager.should_force_expert_routing():
+            return 'expert'
+        
+        # Check for explicit expertise routing (legacy)
+        if BackendConfigManager.should_force_expertise_routing():
+            return 'expertise'
+        
+        # Check for explicit difficulty routing (backward compatibility)
+        if BackendConfigManager.should_force_difficulty_routing():
+            return 'difficulty'
+        
+        # Check if we have expert models configured (new system)
+        expert_models = BackendConfigManager.get_expert_model_mapping()
+        expert_definitions = BackendConfigManager.get_expert_definitions()
+        if expert_models and expert_definitions:
+            return 'expert'
+        
+        # Check if we have expertise models configured (legacy)
+        expertise_models = BackendConfigManager.get_expertise_model_mapping()
+        if expertise_models:
+            return 'expertise'
+        
+        # Check if we have difficulty models configured
+        difficulty_models = BackendConfigManager.get_difficulty_model_mapping()
+        if difficulty_models:
+            return 'difficulty'
+        
+        # Default to normal routing
+        return 'normal'

@@ -20,14 +20,16 @@
     ],
     "vision_analyst": [
       "claude-sonnet-4-20250514",
-      "claude-3-5-sonnet-20241022"
+      "claude-3-7-sonnet-20250219"
     ],
     "documentation_writer": [
-      "claude-3-5-sonnet-20241022",
-      "claude-3-5-haiku-20241022"
+      "claude-sonnet-4-20250514",
+      "claude-3-7-sonnet-20250219",
+      "qwen/qwen3-30b-a3b"
     ],
     "tool_executor": [
-      "claude-3-5-sonnet-20241022",
+      "claude-sonnet-4-20250514",
+      "claude-3-7-sonnet-20250219",
       "qwen/qwen3-30b-a3b"
     ],
     "commit_generator": [
@@ -40,16 +42,17 @@
     ],
     "fast_responder": [
       "claude-3-5-haiku-20241022",
-      "qwen/qwen3-1.7b",
-      "jan-nano-128k"
+      "jan-nano-128k",
+      "qwen/qwen3-1.7b"
     ],
     "multimodal_specialist": [
       "claude-sonnet-4-20250514",
-      "claude-3-5-sonnet-20241022"
+      "claude-3-7-sonnet-20250219"
     ],
     "general_assistant": [
-      "claude-3-5-sonnet-20241022",
-      "qwen/qwen3-30b-a3b"
+      "claude-3-7-sonnet-20250219",
+      "qwen/qwen3-30b-a3b",
+      "jan-nano-128k"
     ]
   },
   "model_providers": {

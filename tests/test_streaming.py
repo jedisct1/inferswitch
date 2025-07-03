@@ -4,7 +4,7 @@ import json
 headers = {
     "x-api-key": "test-key",
     "anthropic-version": "2023-06-01",
-    "content-type": "application/json"
+    "content-type": "application/json",
 }
 
 # Test non-streaming
@@ -13,10 +13,12 @@ data = {
     "model": "claude-3-opus-20240229",
     "messages": [{"role": "user", "content": "Hello"}],
     "max_tokens": 100,
-    "stream": False
+    "stream": False,
 }
 
-response = requests.post("http://localhost:1235/v1/messages", headers=headers, json=data)
+response = requests.post(
+    "http://localhost:1235/v1/messages", headers=headers, json=data
+)
 print(f"Status: {response.status_code}")
 print(f"Response: {json.dumps(response.json(), indent=2)}")
 
@@ -24,7 +26,9 @@ print(f"Response: {json.dumps(response.json(), indent=2)}")
 print("\n\nTesting streaming response...")
 data["stream"] = True
 
-response = requests.post("http://localhost:1235/v1/messages", headers=headers, json=data, stream=True)
+response = requests.post(
+    "http://localhost:1235/v1/messages", headers=headers, json=data, stream=True
+)
 print(f"Status: {response.status_code}")
 print("Stream events:")
 for line in response.iter_lines():

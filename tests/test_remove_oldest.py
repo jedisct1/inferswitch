@@ -5,16 +5,21 @@ Test the remove_oldest_message_pair function.
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from main import remove_oldest_message_pair
+
 
 def print_messages(messages, title="Messages"):
     """Helper to print messages nicely."""
     print(f"\n{title} ({len(messages)} total):")
     for i, msg in enumerate(messages):
-        content_preview = msg['content'][:60] + "..." if len(msg['content']) > 60 else msg['content']
-        print(f"  {i+1}. [{msg['role']:9}] {content_preview}")
+        content_preview = (
+            msg["content"][:60] + "..." if len(msg["content"]) > 60 else msg["content"]
+        )
+        print(f"  {i + 1}. [{msg['role']:9}] {content_preview}")
+
 
 print("Testing remove_oldest_message_pair Function")
 print("=" * 70)
@@ -26,7 +31,10 @@ messages1 = [
     {"role": "user", "content": "What is Python?"},
     {"role": "assistant", "content": "Python is a high-level programming language."},
     {"role": "user", "content": "What about Java?"},
-    {"role": "assistant", "content": "Java is an object-oriented programming language."},
+    {
+        "role": "assistant",
+        "content": "Java is an object-oriented programming language.",
+    },
 ]
 
 print_messages(messages1, "Original")
@@ -38,9 +46,9 @@ print("\n\nTest 2: Removing multiple pairs sequentially")
 messages2 = messages1.copy()
 
 for i in range(3):
-    print(f"\nIteration {i+1}:")
+    print(f"\nIteration {i + 1}:")
     messages2 = remove_oldest_message_pair(messages2)
-    print_messages(messages2, f"After removal {i+1}")
+    print_messages(messages2, f"After removal {i + 1}")
     if len(messages2) <= 1:
         print("  (No more pairs to remove)")
         break
@@ -94,11 +102,11 @@ removal_count = 0
 while True:
     prev_len = len(current)
     current = remove_oldest_message_pair(current)
-    
+
     if len(current) == prev_len:
         print(f"\nNo more pairs to remove after {removal_count} removals")
         break
-    
+
     removal_count += 1
     print(f"\nAfter removal {removal_count}:")
     print_messages(current)
@@ -124,17 +132,17 @@ messages7 = [
 
 # Add 10 exchanges
 for i in range(10):
-    messages7.append({"role": "user", "content": f"Question {i+1}"})
-    messages7.append({"role": "assistant", "content": f"Answer {i+1}"})
+    messages7.append({"role": "user", "content": f"Question {i + 1}"})
+    messages7.append({"role": "assistant", "content": f"Answer {i + 1}"})
 
-total_size = sum(len(msg['content']) for msg in messages7)
+total_size = sum(len(msg["content"]) for msg in messages7)
 print(f"\nStarting with {len(messages7)} messages, {total_size} total characters")
 
 # Remove pairs until we're under a certain size
 target_size = 100
 while total_size > target_size and len(messages7) > 1:
     messages7 = remove_oldest_message_pair(messages7)
-    total_size = sum(len(msg['content']) for msg in messages7)
+    total_size = sum(len(msg["content"]) for msg in messages7)
     print(f"After removal: {len(messages7)} messages, {total_size} characters")
 
 print("\nFinal messages:")

@@ -27,18 +27,20 @@ print("=" * 70)
 
 for test in test_cases:
     messages = [{"role": "user", "content": test["q"]}]
-    
+
     # Original
     start = time.time()
     orig_pred = original.rate_query_difficulty(messages)
     orig_time = (time.time() - start) * 1000
-    
+
     # Optimized
     start = time.time()
     opt_pred = optimized.rate_query_difficulty(messages)
     opt_time = (time.time() - start) * 1000
-    
+
     print(f"\nQ: {test['q'][:40]}...")
     print(f"  Expected: {test['exp']}")
     print(f"  Original: {orig_pred:.1f} ({orig_time:.0f}ms)")
-    print(f"  Optimized: {opt_pred:.1f} ({opt_time:.0f}ms) - {orig_time/opt_time:.1f}x faster")
+    print(
+        f"  Optimized: {opt_pred:.1f} ({opt_time:.0f}ms) - {orig_time / opt_time:.1f}x faster"
+    )

@@ -9,12 +9,12 @@ from ..models import ContentBlock
 def estimate_tokens(content: Union[str, List[ContentBlock]]) -> int:
     """
     Estimate the number of tokens in content.
-    
+
     Uses a simple heuristic of ~4 characters per token.
-    
+
     Args:
         content: String content or list of ContentBlock objects
-        
+
     Returns:
         Estimated token count
     """

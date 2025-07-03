@@ -18,7 +18,7 @@ setup(
     python_requires=">=3.12",
     install_requires=[
         "fastapi>=0.115.12",
-        "httpx>=0.28.1", 
+        "httpx>=0.28.1",
         "pydantic>=2.11.5",
         "uvicorn>=0.34.3",
     ],

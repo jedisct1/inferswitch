@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class ContentBlock(BaseModel):
     """Represents a content block in messages."""
+
     type: str
     text: Optional[str] = None
     source: Optional[Dict[str, Any]] = None
@@ -25,23 +26,32 @@ class ContentBlock(BaseModel):
 
 class Message(BaseModel):
     """Represents a message in a conversation."""
+
     role: str
     content: Union[str, List[ContentBlock], List[Dict[str, Any]]]
-    
+
     class Config:
         extra = "allow"  # Allow extra fields
-        
+
     def model_dump(self, **kwargs):
         # Override to handle content serialization properly
         data = super().model_dump(**kwargs)
         # If content is a list of ContentBlock objects, convert to dicts
-        if isinstance(self.content, list) and self.content and isinstance(self.content[0], ContentBlock):
-            data['content'] = [block.model_dump(exclude_none=True, by_alias=True, exclude_unset=True) for block in self.content]
+        if (
+            isinstance(self.content, list)
+            and self.content
+            and isinstance(self.content[0], ContentBlock)
+        ):
+            data["content"] = [
+                block.model_dump(exclude_none=True, by_alias=True, exclude_unset=True)
+                for block in self.content
+            ]
         return data
 
 
 class MessagesRequest(BaseModel):
     """Request model for the messages endpoint."""
+
     model: str
     messages: List[Message]
     max_tokens: int
@@ -62,6 +72,7 @@ class MessagesRequest(BaseModel):
 
 class CountTokensRequest(BaseModel):
     """Request model for the count tokens endpoint."""
+
     model: str
     messages: List[Message]
     system: Optional[Union[str, List[Dict[str, Any]]]] = None
@@ -70,12 +81,14 @@ class CountTokensRequest(BaseModel):
 
 class Usage(BaseModel):
     """Token usage information."""
+
     input_tokens: int
     output_tokens: int
 
 
 class MessagesResponse(BaseModel):
     """Response model for the messages endpoint."""
+
     id: str
     type: str = "message"
     role: str = "assistant"
@@ -88,6 +101,7 @@ class MessagesResponse(BaseModel):
 
 class CountTokensResponse(BaseModel):
     """Response model for the count tokens endpoint."""
+
     input_tokens: int
 
 
@@ -98,5 +112,5 @@ __all__ = [
     "MessagesResponse",
     "CountTokensRequest",
     "CountTokensResponse",
-    "Usage"
+    "Usage",
 ]

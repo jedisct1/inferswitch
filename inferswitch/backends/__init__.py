@@ -3,7 +3,12 @@ Backend implementations for InferSwitch.
 """
 
 from .base import BaseBackend, BackendConfig, BackendResponse
-from .errors import BackendError, ModelNotFoundError, RateLimitError, AuthenticationError
+from .errors import (
+    BackendError,
+    ModelNotFoundError,
+    RateLimitError,
+    AuthenticationError,
+)
 from .registry import BackendRegistry, backend_registry
 from .router import BackendRouter
 from .normalizer import ResponseNormalizer

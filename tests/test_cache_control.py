@@ -6,7 +6,7 @@ headers = {
     "x-api-key": "test-key",
     "anthropic-version": "2023-06-01",
     "anthropic-beta": "prompt-caching-2024-07-31",
-    "content-type": "application/json"
+    "content-type": "application/json",
 }
 
 # Test with cache_control in system messages
@@ -17,26 +17,17 @@ data = {
         {
             "text": "You are a helpful assistant.",
             "type": "text",
-            "cache_control": {
-                "type": "ephemeral"
-            }
+            "cache_control": {"type": "ephemeral"},
         }
     ],
-    "messages": [
-        {
-            "role": "user",
-            "content": "Hello!"
-        }
-    ],
-    "max_tokens": 100
+    "messages": [{"role": "user", "content": "Hello!"}],
+    "max_tokens": 100,
 }
 
 print(f"Request: {json.dumps(data, indent=2)}")
 
 response = requests.post(
-    "http://localhost:1235/v1/messages",
-    headers=headers,
-    json=data
+    "http://localhost:1235/v1/messages", headers=headers, json=data
 )
 
 print(f"\nStatus Code: {response.status_code}")
@@ -54,22 +45,18 @@ data2 = {
                 {
                     "type": "text",
                     "text": "Tell me about caching.",
-                    "cache_control": {
-                        "type": "ephemeral"
-                    }
+                    "cache_control": {"type": "ephemeral"},
                 }
-            ]
+            ],
         }
     ],
-    "max_tokens": 100
+    "max_tokens": 100,
 }
 
 print(f"Request: {json.dumps(data2, indent=2)}")
 
 response = requests.post(
-    "http://localhost:1235/v1/messages",
-    headers=headers,
-    json=data2
+    "http://localhost:1235/v1/messages", headers=headers, json=data2
 )
 
 print(f"\nStatus Code: {response.status_code}")
@@ -84,9 +71,7 @@ data3 = {
         {
             "text": "You are helpful.",
             "type": "text",
-            "cache_control": {
-                "type": "ephemeral"
-            }
+            "cache_control": {"type": "ephemeral"},
         }
     ],
     "messages": [
@@ -96,21 +81,17 @@ data3 = {
                 {
                     "type": "text",
                     "text": "Count my tokens",
-                    "cache_control": {
-                        "type": "ephemeral"
-                    }
+                    "cache_control": {"type": "ephemeral"},
                 }
-            ]
+            ],
         }
-    ]
+    ],
 }
 
 print(f"Request: {json.dumps(data3, indent=2)}")
 
 response = requests.post(
-    "http://localhost:1235/v1/messages/count-tokens",
-    headers=headers,
-    json=data3
+    "http://localhost:1235/v1/messages/count-tokens", headers=headers, json=data3
 )
 
 print(f"\nStatus Code: {response.status_code}")
@@ -119,4 +100,6 @@ if response.status_code == 200:
 else:
     print(f"Error: {response.text}")
 
-print("\nCheck requests.log to verify cache_control is being forwarded to Anthropic API")
+print(
+    "\nCheck requests.log to verify cache_control is being forwarded to Anthropic API"
+)

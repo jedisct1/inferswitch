@@ -36,14 +36,12 @@ MODEL_CONTEXT_SIZES = {
     "claude-3-opus-20240229": 200000,
     "claude-3-sonnet-20240229": 200000,
     "claude-3-haiku-20240307": 200000,
-    
     # Claude 3.5
     "claude-3-5-sonnet": 200000,
     "claude-3-5-sonnet-20240620": 200000,
     "claude-3-5-sonnet-20241022": 200000,
     "claude-3-5-haiku": 200000,
     "claude-3-5-haiku-20241022": 200000,
-    
     # Claude 4
     "claude-4": 200000,
     "claude-4-20250514": 200000,
@@ -51,8 +49,7 @@ MODEL_CONTEXT_SIZES = {
     "claude-sonnet-4-20250514": 200000,
     "claude-opus-4": 200000,
     "claude-4-opus": 200000,
-    
-    "default": 50000
+    "default": 50000,
 }
 
 # Cache configuration

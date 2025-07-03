@@ -52,18 +52,6 @@ class RequestCache:
         # Fields that affect the response
         cache_fields = {}
 
-        # Always include these fields if present
-        for field in [
-            "model",
-            "max_tokens",
-            "temperature",
-            "top_p",
-            "top_k",
-            "stop_sequences",
-        ]:
-            if field in request_data:
-                cache_fields[field] = request_data[field]
-
         # Handle system prompt
         if "system" in request_data and request_data["system"] is not None:
             system_content = request_data["system"]
@@ -83,6 +71,38 @@ class RequestCache:
                     flags=re.IGNORECASE,
                 )
                 system_content = system_content.strip()
+            elif isinstance(system_content, list):
+                # Handle system as array of objects
+                cleaned_system = []
+                for item in system_content:
+                    if isinstance(item, dict) and "text" in item:
+                        text = item["text"]
+                        # Remove environment_details blocks and timestamps from text
+                        import re
+
+                        text = re.sub(
+                            r"<environment_details>.*?</environment_details>\s*",
+                            "",
+                            text,
+                            flags=re.DOTALL,
+                        )
+                        text = re.sub(
+                            r"(Current Time|Timestamp|Date):\s*[^\n]+\n?",
+                            "",
+                            text,
+                            flags=re.IGNORECASE,
+                        )
+                        text = text.strip()
+                        if text:  # Only add if there's content after cleaning
+                            cleaned_system.append({"text": text})
+                    else:
+                        # Keep non-text items as-is
+                        cleaned_system.append(item)
+                # Sort system prompts by text content to ensure consistent ordering
+                system_content = sorted(
+                    cleaned_system,
+                    key=lambda x: x.get("text", "") if isinstance(x, dict) else str(x),
+                )
             cache_fields["system"] = system_content
 
         # Handle messages - extract only the actual content, not metadata
@@ -181,16 +201,9 @@ class RequestCache:
         # Sort keys to ensure consistent hashing
         stable_json = json.dumps(cache_fields, sort_keys=True)
 
-        # Log cache key computation details
-        logger.debug(f"Cache key fields: {json.dumps(cache_fields, indent=2)}")
-
         # Use SHA256 for hash computation
         hash_obj = hashlib.sha256(stable_json.encode("utf-8"))
         hash_value = hash_obj.hexdigest()
-
-        logger.info(
-            f"Computed cache hash: {hash_value[:16]}... for model={cache_fields.get('model', 'unknown')}"
-        )
         return hash_value
 
     def get(self, request_data: Dict[str, Any]) -> Optional[Any]:
@@ -214,19 +227,14 @@ class RequestCache:
                     # Remove expired entry
                     del self.cache[cache_key]
                     self.misses += 1
-                    logger.debug(f"Cache miss (expired): {cache_key[:8]}...")
                     return None
 
                 # Move to end (most recently used)
                 self.cache.move_to_end(cache_key)
                 self.hits += 1
-                logger.info(
-                    f"Cache hit: {cache_key[:8]}... (hits: {self.hits}, misses: {self.misses})"
-                )
                 return response
 
             self.misses += 1
-            logger.debug(f"Cache miss: {cache_key[:8]}...")
             return None
 
     def set(self, request_data: Dict[str, Any], response: Any) -> None:
@@ -244,14 +252,10 @@ class RequestCache:
             if len(self.cache) >= self.max_size and cache_key not in self.cache:
                 oldest_key = next(iter(self.cache))
                 del self.cache[oldest_key]
-                logger.debug(f"Evicted oldest cache entry: {oldest_key[:8]}...")
 
             # Add/update entry
             self.cache[cache_key] = (response, time.time())
             self.cache.move_to_end(cache_key)
-            logger.info(
-                f"Cached response: {cache_key[:8]}... (size: {len(self.cache)})"
-            )
 
     def clear(self) -> None:
         """Clear all cache entries."""
@@ -259,7 +263,6 @@ class RequestCache:
             self.cache.clear()
             self.hits = 0
             self.misses = 0
-            logger.info("Cache cleared")
 
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""

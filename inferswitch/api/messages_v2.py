@@ -3,6 +3,7 @@ Messages endpoint handler with multi-backend support.
 """
 
 import json
+import time
 from typing import Optional
 
 from fastapi import HTTPException, Header
@@ -42,17 +43,7 @@ async def create_message_v2(
     cache = get_cache() if CACHE_ENABLED else None
     cached_response = cache.get(request_dict) if cache else None
 
-    # Log cache check for debugging
-    if cache:
-        logger.debug(
-            f"Cache check for model={request.model}, messages={len(request_dict.get('messages', []))}"
-        )
-
     if cached_response is not None:
-        logger.info(
-            "Cache HIT - Skipping MLX difficulty computation - Returning cached response"
-        )
-
         # Log the request without difficulty rating for cache hits
         log_request("/v1/messages", request_dict, None)
 
@@ -79,7 +70,6 @@ async def create_message_v2(
             return JSONResponse(content=cached_response)
 
     # Cache miss - compute routing classification with MLX
-    logger.debug("Cache MISS - Computing routing classification with MLX")
 
     # Get backend router to check routing mode
     router = backend_registry.get_router()
@@ -224,6 +214,10 @@ async def create_message_v2(
                     }
 
                     has_error = False
+                    # Collect response content for caching
+                    collected_content = []
+                    message_id = None
+
                     async for event in backend.create_message_stream(
                         messages=messages,
                         model=effective_model,
@@ -238,6 +232,14 @@ async def create_message_v2(
                     ):
                         event_type = event.get("type", "")
 
+                        # Collect content for caching
+                        if event_type == "message_start":
+                            message_id = event.get("message", {}).get("id")
+                        elif event_type == "content_block_delta":
+                            delta = event.get("delta", {})
+                            if delta.get("type") == "text_delta":
+                                collected_content.append(delta.get("text", ""))
+
                         # Forward all events without router injection to prevent duplication
                         # Router messages are already added by the backend when needed
                         yield f"event: {event_type}\ndata: {json.dumps(event)}\n\n".encode(
@@ -247,6 +249,25 @@ async def create_message_v2(
                     # Mark success only if we completed without error
                     if not has_error:
                         router.mark_model_success(effective_model)
+
+                        # Cache the streaming response if cache is enabled
+                        if cache and not has_error:
+                            # Build response dict for caching (similar to non-streaming path)
+                            full_text = "".join(collected_content)
+                            response_dict = {
+                                "id": message_id or f"msg_streamed_{int(time.time())}",
+                                "type": "message",
+                                "role": "assistant",
+                                "content": [{"type": "text", "text": full_text}],
+                                "model": effective_model,
+                                "stop_reason": "end_turn",
+                                "stop_sequence": None,
+                                "usage": {
+                                    "input_tokens": 0,
+                                    "output_tokens": len(full_text.split()),
+                                },
+                            }
+                            cache.set(request_dict, response_dict)
 
                 except BackendError as e:
                     has_error = True
@@ -343,7 +364,6 @@ async def create_message_v2(
             # Cache the response
             if cache:
                 cache.set(request_dict, response_dict)
-                logger.info(f"Cached response for model={request.model}")
 
             # Mark the model as successful
             router.mark_model_success(effective_model)

@@ -10,7 +10,7 @@ from datetime import datetime
 from .base import BaseBackend, BackendConfig, BackendResponse
 from .errors import BackendError, convert_backend_error
 from ..utils.logging import log_request, log_chat_template
-from ..config import LOG_FILE
+from ..config import LOG_FILE, MODEL_MAX_TOKENS
 from ..utils.oauth import oauth_manager
 
 logger = logging.getLogger(__name__)
@@ -94,6 +94,8 @@ class AnthropicBackend(BaseBackend):
         thinking_models = [
             "claude-opus-4-20250514",
             "claude-sonnet-4-20250514",
+            "claude-4-opus-20250514",
+            "claude-4-sonnet-20250514",
             # Note: claude-3-5-sonnet-20241022 and claude-3-5-haiku-20241022 do not support thinking mode
         ]
 
@@ -139,8 +141,20 @@ class AnthropicBackend(BaseBackend):
             if system:
                 request_data["system"] = system
 
+        # Handle max_tokens with model-specific limits
         if max_tokens:
-            request_data["max_tokens"] = max_tokens
+            # Get the maximum allowed tokens for this model
+            model_max = MODEL_MAX_TOKENS.get(effective_model, MODEL_MAX_TOKENS["default"])
+            
+            if max_tokens > model_max:
+                logger.warning(
+                    f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
+                    f"Capping to {model_max}."
+                )
+                request_data["max_tokens"] = model_max
+            else:
+                request_data["max_tokens"] = max_tokens
+        
         if temperature is not None:
             request_data["temperature"] = temperature
 
@@ -151,8 +165,22 @@ class AnthropicBackend(BaseBackend):
             "anthropic_beta",
             "difficulty_rating",
         ]
+        
+        # Filter out thinking parameter for models that don't support it
+        non_thinking_models = [
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+        ]
+        
         for key, value in kwargs.items():
             if key not in request_data and key not in internal_params:
+                # Skip thinking parameter for models that don't support it
+                if key == "thinking" and effective_model in non_thinking_models:
+                    logger.debug(f"Filtering out 'thinking' parameter for model {effective_model}")
+                    continue
                 request_data[key] = value
 
         # Extract API headers from kwargs
@@ -455,6 +483,10 @@ class AnthropicBackend(BaseBackend):
             "claude-3-opus-20240229",
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307",
+            "claude-opus-4-20250514",
+            "claude-sonnet-4-20250514",
+            "claude-4-opus-20250514",
+            "claude-4-sonnet-20250514",
         ]
         return model in anthropic_models
 

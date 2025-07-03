@@ -241,7 +241,8 @@ class BackendConfigManager:
         Get mapping from difficulty ranges to model names.
 
         Returns:
-            Dictionary mapping (min_difficulty, max_difficulty) tuples to lists of model names
+            Dictionary mapping (min_difficulty, max_difficulty) tuples to
+            lists of model names
         """
         mappings = {}
 
@@ -255,14 +256,16 @@ class BackendConfigManager:
 
                     # Convert from JSON format to tuple keys
                     for range_str, models in difficulty_models.items():
-                        # Parse range string like "0.0-0.3" or "[0.0,0.3]" or single values like "3"
+                        # Parse range string like "0.0-0.3" or "[0.0,0.3]"
+                        # or single values like "3"
                         range_str = range_str.strip("[]")
                         if "-" in range_str:
                             parts = range_str.split("-")
                         elif "," in range_str:
                             parts = range_str.split(",")
                         else:
-                            # Single value - treat as exact match range (e.g., "3" -> (3.0, 3.0))
+                            # Single value - treat as exact match range
+                            # (e.g., "3" -> (3.0, 3.0))
                             try:
                                 value = float(range_str.strip())
                                 # Ensure models is always a list
@@ -397,11 +400,13 @@ class BackendConfigManager:
     @staticmethod
     def get_model_availability_config() -> Dict[str, Any]:
         """
-        Get model availability configuration (for temporary disabling on failure).
+        Get model availability configuration
+        (for temporary disabling on failure).
 
         Returns:
             Dictionary with:
-            - disable_duration_seconds: How long to disable a model after failure (default: 300)
+            - disable_duration_seconds: How long to disable a model after
+              failure (default: 300)
             - max_retries: Max number of retries before disabling (default: 1)
         """
         config = {
@@ -590,12 +595,10 @@ class BackendConfigManager:
         """
         # Check environment variable first
         if os.environ.get("INFERSWITCH_FORCE_EXPERT_ROUTING"):
-            return os.environ["INFERSWITCH_FORCE_EXPERT_ROUTING"].lower() in [
-                "true",
-                "1",
-                "yes",
-                "on",
-            ]
+            return (
+                os.environ["INFERSWITCH_FORCE_EXPERT_ROUTING"].lower()
+                in ["true", "1", "yes", "on"]
+            )
 
         # Load from config file
         config_file = Path("inferswitch.config.json")
@@ -612,7 +615,8 @@ class BackendConfigManager:
     @staticmethod
     def should_force_expertise_routing() -> bool:
         """
-        Check if expertise-based routing should be forced for all requests (legacy support).
+        Check if expertise-based routing should be forced for all requests
+        (legacy support).
 
         When enabled, all requests will be routed based on expertise classification,
         ignoring the model requested by the client.
@@ -679,3 +683,60 @@ class BackendConfigManager:
 
         # Default to normal routing
         return "normal"
+
+    @staticmethod
+    def get_proxy_config() -> Dict[str, Any]:
+        """
+        Get HTTP/HTTPS proxy configuration.
+
+        Returns:
+            Dictionary with proxy configuration:
+            - enabled: Whether proxy is enabled (default: False)
+            - host: Proxy host (default: "127.0.0.1")
+            - port: Proxy port (default: 1236)
+            - timeout: Proxy timeout in seconds (default: 30)
+        """
+        config = {
+            "enabled": False,  # Disabled by default
+            "host": "127.0.0.1",
+            "port": 1236,
+            "timeout": 30,
+        }
+
+        # Load from environment variables first
+        if os.environ.get("PROXY_ENABLED"):
+            config["enabled"] = os.environ["PROXY_ENABLED"].lower() == "true"
+        if os.environ.get("PROXY_HOST"):
+            config["host"] = os.environ["PROXY_HOST"]
+        if os.environ.get("PROXY_PORT"):
+            try:
+                config["port"] = int(os.environ["PROXY_PORT"])
+            except ValueError:
+                pass
+        if os.environ.get("PROXY_TIMEOUT"):
+            try:
+                config["timeout"] = int(os.environ["PROXY_TIMEOUT"])
+            except ValueError:
+                pass
+
+        # Load from config file (overrides environment)
+        config_file = Path("inferswitch.config.json")
+        if config_file.exists():
+            try:
+                with open(config_file) as f:
+                    file_config = json.load(f)
+                    proxy_config = file_config.get("proxy", {})
+
+                    if "enabled" in proxy_config:
+                        config["enabled"] = bool(proxy_config["enabled"])
+                    if "host" in proxy_config:
+                        config["host"] = str(proxy_config["host"])
+                    if "port" in proxy_config:
+                        config["port"] = int(proxy_config["port"])
+                    if "timeout" in proxy_config:
+                        config["timeout"] = int(proxy_config["timeout"])
+
+            except Exception as e:
+                logger.warning(f"Failed to load proxy config: {e}")
+
+        return config

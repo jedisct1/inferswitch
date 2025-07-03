@@ -31,6 +31,11 @@ from .auth import (
     AuthenticationError,
     validate_authentication,
 )
+from .proxy import (
+    start_proxy_server,
+    stop_proxy_server,
+    get_proxy_server,
+)
 
 __all__ = [
     "log_request",
@@ -57,4 +62,7 @@ __all__ = [
     "get_openai_auth_headers",
     "AuthenticationError",
     "validate_authentication",
+    "start_proxy_server",
+    "stop_proxy_server",
+    "get_proxy_server",
 ]

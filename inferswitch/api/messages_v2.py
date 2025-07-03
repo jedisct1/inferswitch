@@ -12,7 +12,14 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from ..config import PROXY_MODE, CACHE_ENABLED
 from ..backends import backend_registry, BackendError
 from ..models import MessagesRequest, MessagesResponse, Usage
-from ..utils import log_request, estimate_tokens, generate_sse_events
+from ..utils import (
+    log_request,
+    estimate_tokens,
+    generate_sse_events,
+    get_logger,
+    validate_required_headers,
+    validate_request_data,
+)
 from ..utils.cache import get_cache
 from ..utils.chat_template import convert_to_chat_template
 from ..mlx_model import mlx_model_manager
@@ -27,17 +34,15 @@ async def create_message_v2(
     x_backend: Optional[str] = Header(None),  # New header for backend selection
 ):
     """Handle POST /v1/messages requests with multi-backend support."""
-    import logging
+    logger = get_logger(__name__)
 
-    logger = logging.getLogger(__name__)
-
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="Missing x-api-key header")
-
-    if not anthropic_version:
-        raise HTTPException(status_code=400, detail="Missing anthropic-version header")
+    # Validate required headers
+    validate_required_headers(x_api_key, anthropic_version)
 
     request_dict = request.model_dump(exclude_none=True)
+
+    # Validate request data
+    validate_request_data(request_dict)
 
     # Check cache first if enabled - avoid MLX computation for cached responses
     cache = get_cache() if CACHE_ENABLED else None

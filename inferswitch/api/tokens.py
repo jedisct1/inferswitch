@@ -3,7 +3,6 @@ Token counting endpoint handler.
 """
 
 import json
-import logging
 from typing import Optional
 import httpx
 
@@ -12,10 +11,15 @@ from fastapi import HTTPException, Header
 from ..config import PROXY_MODE
 from ..backends import backend_registry, BackendError
 from ..models import CountTokensRequest, CountTokensResponse
-from ..utils import log_request, estimate_tokens
+from ..utils import (
+    log_request,
+    estimate_tokens,
+    get_logger,
+    validate_request_data,
+)
 from ..utils.oauth import oauth_manager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def count_tokens(
@@ -28,15 +32,20 @@ async def count_tokens(
     # Check for OAuth token first
     oauth_token = await oauth_manager.get_valid_token()
 
+    # Validate authentication (OAuth or API key)
     if not oauth_token and not x_api_key:
         raise HTTPException(
             status_code=401, detail="Missing x-api-key header or OAuth token"
         )
 
+    # Validate anthropic version header
     if not anthropic_version:
         raise HTTPException(status_code=400, detail="Missing anthropic-version header")
 
     request_dict = request.model_dump(exclude_none=True)
+
+    # Validate request data
+    validate_request_data(request_dict)
 
     if PROXY_MODE:
         # Use Anthropic backend directly for token counting

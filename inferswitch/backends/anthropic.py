@@ -4,16 +4,16 @@ Anthropic backend implementation.
 
 import httpx
 import json
-import logging
 from typing import Dict, Any, List, Optional, AsyncIterator
 from datetime import datetime
 from .base import BaseBackend, BackendConfig, BackendResponse
 from .errors import BackendError, convert_backend_error
 from ..utils.logging import log_request, log_chat_template
+from ..utils import get_logger, estimate_tokens_fallback
 from ..config import LOG_FILE, MODEL_MAX_TOKENS
 from ..utils.oauth import oauth_manager
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AnthropicBackend(BaseBackend):
@@ -475,14 +475,8 @@ class AnthropicBackend(BaseBackend):
                 )
                 break
 
-        # Fallback: estimate tokens
-        char_count = sum(len(str(msg)) for msg in messages)
-        if system:
-            char_count += len(system)
-
-        estimated_tokens = char_count // 4  # Rough estimation
-
-        return {"input_tokens": estimated_tokens, "output_tokens": 0}
+        # Fallback: estimate tokens using common utility
+        return estimate_tokens_fallback(messages, system)
 
     def supports_model(self, model: str) -> bool:
         """Check if this backend supports a given model."""

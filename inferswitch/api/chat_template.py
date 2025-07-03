@@ -2,15 +2,21 @@
 Chat template endpoint handler.
 """
 
-import logging
 from typing import Optional
 
 from fastapi import HTTPException, Header
 
 from ..models import MessagesRequest
-from ..utils import log_request, convert_to_chat_template, apply_chat_template
+from ..utils import (
+    log_request,
+    convert_to_chat_template,
+    apply_chat_template,
+    get_logger,
+    validate_required_headers,
+    validate_request_data,
+)
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def get_chat_template(
@@ -22,13 +28,13 @@ async def get_chat_template(
     Convert an Anthropic messages request to chat template format.
     This is a custom endpoint not part of the official Anthropic API.
     """
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="Missing x-api-key header")
-
-    if not anthropic_version:
-        raise HTTPException(status_code=400, detail="Missing anthropic-version header")
+    # Validate required headers
+    validate_required_headers(x_api_key, anthropic_version)
 
     request_dict = request.model_dump(exclude_none=True)
+
+    # Validate request data
+    validate_request_data(request_dict)
 
     try:
         # Convert to chat template format

@@ -9,6 +9,7 @@ from .base import BaseBackend, BackendConfig, BackendResponse
 from .normalizer import ResponseNormalizer
 from .errors import BackendError, convert_backend_error
 from ..utils.logging import log_request
+from ..utils import estimate_tokens_fallback
 
 
 class OpenAIBackend(BaseBackend):
@@ -227,14 +228,8 @@ class OpenAIBackend(BaseBackend):
             return response.usage or {"input_tokens": 0, "output_tokens": 0}
 
         except Exception:
-            # Fallback: estimate tokens
-            char_count = sum(len(str(msg)) for msg in messages)
-            if system:
-                char_count += len(system)
-
-            estimated_tokens = char_count // 4  # Rough estimation
-
-            return {"input_tokens": estimated_tokens, "output_tokens": 0}
+            # Fallback: estimate tokens using common utility
+            return estimate_tokens_fallback(messages, system)
 
     def supports_model(self, model: str) -> bool:
         """Check if this backend supports a given model."""

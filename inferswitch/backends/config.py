@@ -4,12 +4,12 @@ Backend configuration management.
 
 import os
 import json
-import logging
 from typing import Dict, Any, Optional, Tuple, List
 from pathlib import Path
 from .base import BackendConfig
+from ..utils import get_logger, load_config_file
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BackendConfigManager:
@@ -33,25 +33,20 @@ class BackendConfigManager:
         # Load defaults
         configs.update(BackendConfigManager._get_default_configs())
 
-        # Load from config file if exists
-        config_file = Path("inferswitch.config.json")
-        if config_file.exists():
-            try:
-                with open(config_file) as f:
-                    file_config = json.load(f)
-                    # Merge file configs with existing configs instead of replacing
-                    file_configs = BackendConfigManager._parse_file_config(file_config)
-                    for name, file_backend_config in file_configs.items():
-                        if name in configs:
-                            # Merge with existing config
-                            configs[name] = BackendConfigManager._merge_configs(
-                                configs[name], file_backend_config
-                            )
-                        else:
-                            # New backend from file
-                            configs[name] = file_backend_config
-            except Exception as e:
-                logger.warning(f"Failed to load config file: {e}")
+        # Load from config file using common utility
+        file_config = load_config_file("inferswitch.config.json")
+        if file_config:
+            # Merge file configs with existing configs instead of replacing
+            file_configs = BackendConfigManager._parse_file_config(file_config)
+            for name, file_backend_config in file_configs.items():
+                if name in configs:
+                    # Merge with existing config
+                    configs[name] = BackendConfigManager._merge_configs(
+                        configs[name], file_backend_config
+                    )
+                else:
+                    # New backend from file
+                    configs[name] = file_backend_config
 
         # Override with environment variables
         configs.update(BackendConfigManager._get_env_configs())

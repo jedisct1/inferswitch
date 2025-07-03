@@ -60,10 +60,7 @@ class RequestCache:
                 # Remove environment_details blocks from system prompt
                 import re
 
-                # Pattern to match <environment_details>...</environment_details> blocks
-                pattern = r"<environment_details>.*?</environment_details>\s*"
-                system_content = re.sub(pattern, "", system_content, flags=re.DOTALL)
-                # Also remove any remaining timestamp patterns like "Current Time: ..."
+                # Remove any timestamp patterns like "Current Time: ..."
                 system_content = re.sub(
                     r"(Current Time|Timestamp|Date):\s*[^\n]+\n?",
                     "",
@@ -77,15 +74,9 @@ class RequestCache:
                 for item in system_content:
                     if isinstance(item, dict) and "text" in item:
                         text = item["text"]
-                        # Remove environment_details blocks and timestamps from text
+                        # Remove timestamps from text
                         import re
 
-                        text = re.sub(
-                            r"<environment_details>.*?</environment_details>\s*",
-                            "",
-                            text,
-                            flags=re.DOTALL,
-                        )
                         text = re.sub(
                             r"(Current Time|Timestamp|Date):\s*[^\n]+\n?",
                             "",

@@ -219,7 +219,7 @@ class AnthropicBackend(BaseBackend):
                     k: v if k != "authorization" else "Bearer ***"
                     for k, v in headers.items()
                 }
-                logger.info(f"Request headers (attempt {attempt + 1}): {safe_headers}")
+                logger.debug(f"Request headers (attempt {attempt + 1}): {safe_headers}")
 
                 # Make request
                 response = await self.client.post(

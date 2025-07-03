@@ -976,16 +976,6 @@ InferSwitch uses a modular, extensible architecture built on FastAPI:
 - **Multi-Modal**: Route vision tasks to vision-capable models
 - **Compliance**: Use specific models for regulatory requirements
 
-## Roadmap
-
-- [ ] **GraphQL Support**: Add GraphQL endpoints alongside REST
-- [ ] **WebSocket Streaming**: Real-time bidirectional communication
-- [ ] **Metrics Dashboard**: Web-based monitoring and analytics
-- [ ] **Model Fine-tuning**: Integration with fine-tuning APIs
-- [ ] **Load Balancing**: Advanced load balancing between backends
-- [ ] **Rate Limiting**: Per-user and per-backend rate limiting
-- [ ] **Kubernetes Deployment**: Helm charts and operators
-
 ## Community
 
 - 🐛 **Bug Reports**: [GitHub Issues](https://github.com/jedisct1/inferswitch/issues)

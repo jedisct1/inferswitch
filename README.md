@@ -125,20 +125,7 @@ curl -X POST http://localhost:1235/v1/messages \
 
 You should see Claude respond normally. **That's it!** InferSwitch is now running and ready to intelligently route your requests.
 
-### Basic Usage Examples
-
-#### Chat with Claude (Default)
-```bash
-curl -X POST http://localhost:1235/v1/messages \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: $ANTHROPIC_API_KEY" \
-  -H "anthropic-version: 2023-06-01" \
-  -d '{
-    "model": "claude-3-5-sonnet-20241022",
-    "messages": [{"role": "user", "content": "Explain quantum computing in simple terms"}],
-    "max_tokens": 200
-  }'
-```
+### Advanced Quick Start Examples
 
 #### Enable Streaming
 ```bash
@@ -241,65 +228,6 @@ curl -X POST http://localhost:1235/v1/messages \
   }'
 ```
 
-### Custom Expert Routing Example
-
-Configure InferSwitch with your own AI experts for intelligent routing:
-
-1. **Create `inferswitch.config.json`**:
-```json
-{
-  "force_expert_routing": true,
-  "expert_definitions": {
-    "coding_specialist": "A coding-focused AI model optimized for programming tasks including writing code, debugging, code review, refactoring, explaining algorithms, and solving complex programming problems across multiple languages and frameworks.",
-    "vision_analyst": "A vision-capable multimodal AI model that can analyze images, screenshots, diagrams, charts, UI mockups, and visual content, providing detailed descriptions and insights about visual elements.",
-    "documentation_writer": "A model optimized for creating clear, comprehensive documentation including API docs, README files, technical guides, code comments, user manuals, and converting complex technical concepts into readable content.",
-    "tool_executor": "A model specialized in function calling, API interactions, tool usage, structured data processing, and tasks requiring precise execution of external tools and integrations.",
-    "commit_generator": "A model optimized for generating concise, descriptive git commit messages, changelog entries, release notes, and version control-related text based on code changes and diffs.",
-    "reasoning_engine": "A model optimized for complex reasoning, mathematical problem-solving, logical analysis, step-by-step thinking, research tasks, and handling queries requiring deep analytical thinking.",
-    "fast_responder": "A lightweight, fast model optimized for quick responses to simple questions, basic coding tasks, quick explanations, and scenarios where speed is prioritized over complexity.",
-    "multimodal_specialist": "A comprehensive multimodal model capable of handling text, images, and complex mixed-content tasks that require understanding and processing multiple types of input simultaneously.",
-    "general_assistant": "A well-rounded generalist model capable of handling diverse tasks across multiple domains when no specific model capability is clearly required for the query."
-  },
-  "expert_models": {
-    "coding_specialist": ["claude-3-5-sonnet-20241022", "qwen/qwen-2.5-coder-32b", "openhands-lm-32b"],
-    "vision_analyst": ["claude-3-5-sonnet-20241022", "gpt-4-vision-preview"],
-    "documentation_writer": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
-    "tool_executor": ["claude-3-5-sonnet-20241022", "gpt-4"],
-    "commit_generator": ["claude-3-5-haiku-20241022", "qwen/qwen-2.5-3b"],
-    "reasoning_engine": ["claude-3-opus-20240229", "claude-3-5-sonnet-20241022"],
-    "fast_responder": ["claude-3-haiku-20240307", "qwen/qwen-2.5-3b"],
-    "multimodal_specialist": ["claude-3-5-sonnet-20241022", "gpt-4-vision-preview"],
-    "general_assistant": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
-  },
-  "model_providers": {
-    "claude-3-5-sonnet-20241022": "anthropic",
-    "claude-3-opus-20240229": "anthropic",
-    "claude-3-5-haiku-20241022": "anthropic",
-    "claude-3-haiku-20240307": "anthropic",
-    "gpt-4": "openai",
-    "gpt-3.5-turbo": "openai",
-    "qwen/qwen-2.5-coder-32b": "lm-studio"
-  },
-  "fallback": {
-    "provider": "anthropic",
-    "model": "claude-3-haiku-20240307"
-  }
-}
-```
-
-2. **Now InferSwitch intelligently routes using MLX classification**:
-   - "Debug this React component" → `coding_specialist` → Claude 3.5 Sonnet
-   - "Analyze this screenshot of an error" → `vision_analyst` → Claude 3.5 Sonnet
-   - "Write API documentation" → `documentation_writer` → Claude 3.5 Haiku
-   - "Call this REST API with parameters" → `tool_executor` → Claude 3.5 Sonnet
-   - "Generate commit message for these changes" → `commit_generator` → Claude 3.5 Haiku
-   - "Solve this complex math problem" → `reasoning_engine` → Claude 3 Opus
-   - "What's 2+2?" → `fast_responder` → Claude 3 Haiku
-   - "Analyze this image and write a report" → `multimodal_specialist` → Claude 3.5 Sonnet
-   - "Help me plan my day" → `general_assistant` → Claude 3.5 Sonnet
-
-The MLX model analyzes each query against your expert descriptions and routes to the best match - no keyword patterns or hardcoded rules needed!
-
 ## Custom Expert System
 
 InferSwitch's most powerful feature is its custom expert routing system. Unlike traditional rule-based routing, InferSwitch uses MLX language models to intelligently classify queries and route them to your custom-defined experts.
@@ -312,32 +240,52 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
 - **Intelligent Matching**: Queries are matched based on semantic similarity to expert descriptions
 - **Multi-Backend Support**: Route different experts to different model providers
 
-### Quick Expert Setup
+### Expert Setup Example
 
-1. **Define Your Experts** in `inferswitch.config.json`:
+1. **Create `inferswitch.config.json`** with your expert definitions:
 ```json
 {
   "force_expert_routing": true,
   "expert_definitions": {
-    "coding_specialist": "A coding-focused AI model optimized for programming tasks...",
-    "vision_analyst": "A vision-capable multimodal AI model...",
-    "fast_responder": "A lightweight, fast model for quick responses..."
-  }
-}
-```
-
-2. **Map Experts to Models**:
-```json
-{
+    "coding_specialist": "A coding-focused AI model optimized for programming tasks including writing code, debugging, code review, refactoring, explaining algorithms, and solving complex programming problems across multiple languages and frameworks.",
+    "vision_analyst": "A vision-capable multimodal AI model that can analyze images, screenshots, diagrams, charts, UI mockups, and visual content, providing detailed descriptions and insights about visual elements.",
+    "documentation_writer": "A model optimized for creating clear, comprehensive documentation including API docs, README files, technical guides, code comments, user manuals, and converting complex technical concepts into readable content.",
+    "reasoning_engine": "A model optimized for complex reasoning, mathematical problem-solving, logical analysis, step-by-step thinking, research tasks, and handling queries requiring deep analytical thinking.",
+    "fast_responder": "A lightweight, fast model optimized for quick responses to simple questions, basic coding tasks, quick explanations, and scenarios where speed is prioritized over complexity.",
+    "general_assistant": "A well-rounded generalist model capable of handling diverse tasks across multiple domains when no specific model capability is clearly required for the query."
+  },
   "expert_models": {
-    "coding_specialist": ["claude-3-5-sonnet-20241022", "qwen/qwen-coder"],
-    "vision_analyst": ["claude-3-5-sonnet-20241022", "gpt-4-vision"], 
-    "fast_responder": ["claude-3-haiku-20240307", "qwen/qwen-3b"]
+    "coding_specialist": ["claude-3-5-sonnet-20241022", "qwen/qwen-2.5-coder-32b"],
+    "vision_analyst": ["claude-3-5-sonnet-20241022", "gpt-4-vision-preview"],
+    "documentation_writer": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
+    "reasoning_engine": ["claude-3-opus-20240229", "claude-3-5-sonnet-20241022"],
+    "fast_responder": ["claude-3-haiku-20240307", "qwen/qwen-2.5-3b"],
+    "general_assistant": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
+  },
+  "model_providers": {
+    "claude-3-5-sonnet-20241022": "anthropic",
+    "claude-3-opus-20240229": "anthropic",
+    "claude-3-5-haiku-20241022": "anthropic",
+    "claude-3-haiku-20240307": "anthropic",
+    "gpt-4": "openai",
+    "qwen/qwen-2.5-coder-32b": "lm-studio"
+  },
+  "fallback": {
+    "provider": "anthropic",
+    "model": "claude-3-haiku-20240307"
   }
 }
 ```
 
-3. **Start InferSwitch** - it automatically routes based on expert classification!
+2. **Start InferSwitch** - it automatically routes using MLX classification:
+   - "Debug this React component" → `coding_specialist` → Claude 3.5 Sonnet
+   - "Analyze this screenshot" → `vision_analyst` → Claude 3.5 Sonnet
+   - "Write API documentation" → `documentation_writer` → Claude 3.5 Haiku
+   - "Solve this complex math problem" → `reasoning_engine` → Claude 3 Opus
+   - "What's 2+2?" → `fast_responder` → Claude 3 Haiku
+   - "Help me plan my day" → `general_assistant` → Claude 3.5 Sonnet
+
+The MLX model analyzes each query against your expert descriptions and routes to the best match - no keyword patterns or hardcoded rules needed!
 
 See the [Custom Expert Documentation](docs/custom_experts.md) for detailed configuration examples.
 
@@ -354,64 +302,31 @@ InferSwitch can be configured through (in order of precedence):
 
 ### Configuration File Structure
 
-Create `inferswitch.config.json` in your working directory:
+Create `inferswitch.config.json` in your working directory for advanced configuration:
 
 ```json
 {
-  "_comment": "Backend configurations",
   "backends": {
-    "anthropic": {
-      "api_key": "sk-ant-...",
-      "timeout": 300
-    },
-    "lm-studio": {
-      "base_url": "http://127.0.0.1:1234",
-      "timeout": 600
-    },
-    "openai": {
-      "api_key": "sk-...",
-      "base_url": "https://api.openai.com/v1"
-    },
-    "openrouter": {
-      "api_key": "sk-or-...",
-      "base_url": "https://openrouter.ai/api/v1"
-    }
+    "anthropic": { "api_key": "sk-ant-...", "timeout": 300 },
+    "lm-studio": { "base_url": "http://127.0.0.1:1234", "timeout": 600 },
+    "openai": { "api_key": "sk-...", "base_url": "https://api.openai.com/v1" },
+    "openrouter": { "api_key": "sk-or-...", "base_url": "https://openrouter.ai/api/v1" }
   },
-
-  "_comment_2": "Model to backend mappings",
   "model_providers": {
     "claude-3-haiku-20240307": "lm-studio",
-    "gpt-3.5-turbo": "openai",
-    "my-custom-model": "lm-studio"
+    "gpt-3.5-turbo": "openai"
   },
-
-  "_comment_3": "Model override mappings",
   "model_overrides": {
-    "claude-3-5-sonnet-20241022": "claude-3-haiku-20240307",
-    "gpt-4": "gpt-3.5-turbo"
+    "claude-3-5-sonnet-20241022": "claude-3-haiku-20240307"
   },
-
-  "_comment_4": "Custom expert definitions (replaces difficulty-based routing)",
   "expert_definitions": {
-    "coding_expert": "A programming specialist skilled in software development, debugging, and code optimization",
-    "data_analyst": "A data expert focused on analysis, visualization, and statistical insights"
+    "coding_expert": "Programming specialist for development and debugging tasks",
+    "data_analyst": "Expert in data analysis, visualization, and insights"
   },
   "expert_models": {
     "coding_expert": ["claude-3-5-sonnet-20241022"],
     "data_analyst": ["claude-3-opus-20240229"]
   },
-
-  "_comment_5": "MLX model for classification",
-  "mlx_model": "jedisct1/arch-router-1.5b",
-
-  "_comment_6": "OAuth configuration (optional)",
-  "providers_auth": {
-    "anthropic": {
-      "oauth": {}
-    }
-  },
-
-  "_comment_7": "Fallback configuration",
   "fallback": {
     "provider": "anthropic",
     "model": "claude-3-haiku-20240307"
@@ -640,23 +555,7 @@ LOG_LEVEL=DEBUG uv run python main.py
 
 ### Performance Monitoring
 
-InferSwitch provides built-in monitoring and performance metrics:
-
-```bash
-# View real-time cache statistics
-curl http://localhost:1235/cache/stats
-
-# Check backend health and response times
-curl http://localhost:1235/backends/status
-
-# Monitor request logs
-tail -f requests.log
-
-# Check server logs
-tail -f server.log
-```
-
-Example cache stats output:
+InferSwitch provides built-in monitoring and performance metrics. Example cache stats output:
 ```json
 {
   "enabled": true,

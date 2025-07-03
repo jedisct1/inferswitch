@@ -265,40 +265,85 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
     "coding_specialist": "A coding-focused AI model optimized for programming tasks including writing code, debugging, code review, refactoring, explaining algorithms, and solving complex programming problems across multiple languages and frameworks.",
     "vision_analyst": "A vision-capable multimodal AI model that can analyze images, screenshots, diagrams, charts, UI mockups, and visual content, providing detailed descriptions and insights about visual elements.",
     "documentation_writer": "A model optimized for creating clear, comprehensive documentation including API docs, README files, technical guides, code comments, user manuals, and converting complex technical concepts into readable content.",
+    "tool_executor": "A model specialized in function calling, API interactions, tool usage, structured data processing, and tasks requiring precise execution of external tools and integrations.",
+    "commit_generator": "A model optimized for generating concise, descriptive git commit messages, changelog entries, release notes, and version control-related text based on code changes and diffs.",
     "reasoning_engine": "A model optimized for complex reasoning, mathematical problem-solving, logical analysis, step-by-step thinking, research tasks, and handling queries requiring deep analytical thinking.",
     "fast_responder": "A lightweight, fast model optimized for quick responses to simple questions, basic coding tasks, quick explanations, and scenarios where speed is prioritized over complexity.",
+    "multimodal_specialist": "A comprehensive multimodal model capable of handling text, images, and complex mixed-content tasks that require understanding and processing multiple types of input simultaneously.",
     "general_assistant": "A well-rounded generalist model capable of handling diverse tasks across multiple domains when no specific model capability is clearly required for the query."
   },
   "expert_models": {
-    "coding_specialist": ["claude-3-5-sonnet-20241022", "qwen/qwen-2.5-coder-32b"],
-    "vision_analyst": ["claude-3-5-sonnet-20241022", "gpt-4-vision-preview"],
-    "documentation_writer": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
-    "reasoning_engine": ["claude-3-opus-20240229", "claude-3-5-sonnet-20241022"],
-    "fast_responder": ["claude-3-haiku-20240307", "qwen/qwen-2.5-3b"],
-    "general_assistant": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
+    "coding_specialist": [
+      "claude-opus-4-20250514",
+      "claude-sonnet-4-20250514",
+      "openhands-lm-32b-v0.1",
+      "qwen/qwen3-30b-a3b"
+    ],
+    "vision_analyst": [
+      "claude-sonnet-4-20250514",
+      "claude-3-7-sonnet-20250219"
+    ],
+    "documentation_writer": [
+      "claude-sonnet-4-20250514",
+      "claude-3-7-sonnet-20250219",
+      "qwen/qwen3-30b-a3b"
+    ],
+    "tool_executor": [
+      "claude-sonnet-4-20250514",
+      "claude-3-7-sonnet-20250219",
+      "qwen/qwen3-30b-a3b"
+    ],
+    "commit_generator": [
+      "claude-3-5-haiku-20241022",
+      "qwen/qwen3-1.7b"
+    ],
+    "reasoning_engine": [
+      "claude-opus-4-20250514",
+      "claude-sonnet-4-20250514"
+    ],
+    "fast_responder": [
+      "claude-3-5-haiku-20241022",
+      "jan-nano-128k",
+      "qwen/qwen3-1.7b"
+    ],
+    "multimodal_specialist": [
+      "claude-sonnet-4-20250514",
+      "claude-3-7-sonnet-20250219"
+    ],
+    "general_assistant": [
+      "claude-3-7-sonnet-20250219",
+      "qwen/qwen3-30b-a3b",
+      "jan-nano-128k"
+    ]
   },
   "model_providers": {
-    "claude-3-5-sonnet-20241022": "anthropic",
-    "claude-3-opus-20240229": "anthropic",
+    "qwen/qwen3-1.7b": "lm-studio",
+    "qwen/qwen3-30b-a3b": "lm-studio",
+    "openhands-lm-32b-v0.1": "lm-studio",
+    "jan-nano-128k": "lm-studio",
     "claude-3-5-haiku-20241022": "anthropic",
-    "claude-3-haiku-20240307": "anthropic",
-    "gpt-4": "openai",
-    "qwen/qwen-2.5-coder-32b": "lm-studio"
+    "claude-3-5-sonnet-20241022": "anthropic",
+    "claude-3-7-sonnet-20250219": "anthropic",
+    "claude-sonnet-4-20250514": "anthropic",
+    "claude-opus-4-20250514": "anthropic"
   },
   "fallback": {
-    "provider": "anthropic",
-    "model": "claude-3-haiku-20240307"
+    "provider": "lm-studio",
+    "model": "all-hands_openhands-lm-32b-v0.1"
   }
 }
 ```
 
 2. **Start InferSwitch** - it automatically routes using MLX classification:
-   - "Debug this React component" → `coding_specialist` → Claude 3.5 Sonnet
-   - "Analyze this screenshot" → `vision_analyst` → Claude 3.5 Sonnet
-   - "Write API documentation" → `documentation_writer` → Claude 3.5 Haiku
-   - "Solve this complex math problem" → `reasoning_engine` → Claude 3 Opus
-   - "What's 2+2?" → `fast_responder` → Claude 3 Haiku
-   - "Help me plan my day" → `general_assistant` → Claude 3.5 Sonnet
+   - "Debug this React component" → `coding_specialist` → Claude Opus 4
+   - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4
+   - "Write API documentation" → `documentation_writer` → Claude Sonnet 4
+   - "Generate commit message for these changes" → `commit_generator` → Claude 3.5 Haiku
+   - "Call this API endpoint" → `tool_executor` → Claude Sonnet 4
+   - "Solve this complex math problem" → `reasoning_engine` → Claude Opus 4
+   - "What's 2+2?" → `fast_responder` → Claude 3.5 Haiku
+   - "Analyze this mixed text and image content" → `multimodal_specialist` → Claude Sonnet 4
+   - "Help me plan my day" → `general_assistant` → Claude 3.7 Sonnet
 
 The MLX model analyzes each query against your expert descriptions and routes to the best match - no keyword patterns or hardcoded rules needed!
 

@@ -74,9 +74,3 @@ MODEL_MAX_TOKENS = {
 CACHE_ENABLED = os.getenv("CACHE_ENABLED", "true").lower() == "true"
 CACHE_MAX_SIZE = int(os.getenv("CACHE_MAX_SIZE", "1000"))
 CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "3600"))  # 1 hour default
-
-# HTTP/HTTPS Proxy configuration
-PROXY_HOST = os.getenv("PROXY_HOST", "127.0.0.1")
-PROXY_PORT = int(os.getenv("PROXY_PORT", "1236"))
-PROXY_ENABLED = os.getenv("PROXY_ENABLED", "false").lower() == "true"  # Disabled by default
-PROXY_TIMEOUT = int(os.getenv("PROXY_TIMEOUT", "30"))  # seconds

@@ -15,7 +15,6 @@ from .mlx_model import mlx_model_manager
 from .expertise_classifier import expert_classifier
 from .backends import backend_registry, AnthropicBackend, OpenAIBackend
 from .utils.oauth import oauth_manager
-from .utils import start_proxy_server, stop_proxy_server
 
 logger = logging.getLogger(__name__)
 
@@ -52,14 +51,12 @@ async def startup_event():
         if not token:
             # No valid token, run interactive OAuth flow
             logger.info(
-                "OAuth configured but no valid token found. "
-                "Starting interactive authentication..."
+                "OAuth configured but no valid token found. Starting interactive authentication..."
             )
             success = await oauth_manager.interactive_oauth_flow()
             if not success:
                 logger.warning(
-                    "OAuth authentication failed. "
-                    "Continuing with API key authentication."
+                    "OAuth authentication failed. Continuing with API key authentication."
                 )
         else:
             logger.info("Using existing OAuth token for Anthropic authentication")
@@ -101,8 +98,7 @@ async def startup_event():
         if expert_definitions:
             expert_classifier.set_expert_definitions(expert_definitions)
             logger.info(
-                f"Loaded {len(expert_definitions)} expert definitions: "
-                f"{list(expert_definitions.keys())}"
+                f"Loaded {len(expert_definitions)} expert definitions: {list(expert_definitions.keys())}"
             )
 
             # Load MLX model for classification
@@ -111,8 +107,7 @@ async def startup_event():
             logger.info(f"Expert classifier loading: {message}")
             if not success:
                 logger.warning(
-                    "Expert classifier MLX model failed to load. "
-                    "Expert routing will be disabled."
+                    "Expert classifier MLX model failed to load. Expert routing will be disabled."
                 )
         else:
             logger.info(
@@ -124,38 +119,10 @@ async def startup_event():
             f"Expert classifier loading error: {e}. Expert routing will be disabled."
         )
 
-    # Start HTTP/HTTPS proxy server if enabled
-    from .backends.config import BackendConfigManager
-    proxy_config = BackendConfigManager.get_proxy_config()
-
-    if proxy_config["enabled"]:
-        try:
-            await start_proxy_server(
-                host=proxy_config["host"],
-                port=proxy_config["port"],
-                timeout=proxy_config["timeout"]
-            )
-            logger.info(
-                f"HTTP/HTTPS proxy server started on "
-                f"{proxy_config['host']}:{proxy_config['port']}"
-            )
-        except Exception as e:
-            logger.warning(f"Failed to start proxy server: {e}")
-    else:
-        logger.info("HTTP/HTTPS proxy server disabled")
-
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up on shutdown."""
-    # Stop proxy server
-    from .backends.config import BackendConfigManager
-    proxy_config = BackendConfigManager.get_proxy_config()
-
-    if proxy_config["enabled"]:
-        await stop_proxy_server()
-        logger.info("HTTP/HTTPS proxy server stopped")
-
     # Close all backends
     await backend_registry.close_all()
 
@@ -395,9 +362,7 @@ async def oauth_authorize():
         "auth_url": auth_url,
         "state": state,
         "code_verifier": code_verifier,
-        "instructions": (
-            "Visit the auth_url and save the state and code_verifier for the callback"
-        ),
+        "instructions": "Visit the auth_url and save the state and code_verifier for the callback",
     }
 
 
@@ -462,34 +427,6 @@ async def oauth_logout():
     """Clear stored OAuth tokens."""
     oauth_manager.clear_tokens()
     return {"message": "OAuth tokens cleared"}
-
-
-@app.get("/proxy/status")
-async def proxy_status():
-    """Get HTTP/HTTPS proxy server status."""
-    from .backends.config import BackendConfigManager
-    from .utils import get_proxy_server
-
-    proxy_config = BackendConfigManager.get_proxy_config()
-
-    if not proxy_config["enabled"]:
-        return {"enabled": False, "message": "Proxy server is disabled"}
-
-    proxy_server = get_proxy_server()
-    if proxy_server:
-        return {
-            "enabled": True,
-            "running": proxy_server.running,
-            "host": proxy_server.host,
-            "port": proxy_server.port,
-            "timeout": proxy_server.timeout,
-        }
-    else:
-        return {
-            "enabled": True,
-            "running": False,
-            "message": "Proxy server not started"
-        }
 
 
 def main():

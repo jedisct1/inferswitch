@@ -153,61 +153,89 @@ class AnthropicBackend(BaseBackend):
         log_request("/v1/messages", request_data, kwargs.get('difficulty_rating'))
         log_chat_template("/v1/messages", request_data)
         
-        try:
-            # Prepare headers
-            headers = await self._prepare_request_headers(x_api_key, anthropic_version, anthropic_beta)
-            
-            # Log headers for debugging (excluding sensitive data)
-            safe_headers = {k: v if k != "authorization" else "Bearer ***" for k, v in headers.items()}
-            logger.info(f"Request headers: {safe_headers}")
-            
-            # Make request
-            response = await self.client.post(
-                f"{self.base_url}/v1/messages",
-                json=request_data,
-                headers=headers
-            )
-            
-            # Log response
-            self._log_response(response, request_data, headers)
-            
-            # Check for OAuth-specific errors before raising
-            if response.status_code == 400:
-                try:
-                    error_data = response.json()
-                    error_msg = error_data.get("error", {}).get("message", "")
-                    if "This credential is only authorized for use with Claude Code" in error_msg:
-                        logger.error("OAuth token is restricted to Claude Code. This token cannot be used for general API access.")
-                        logger.info("Please use API keys for general Anthropic API access, or obtain an OAuth token with broader permissions.")
-                except (ValueError, json.JSONDecodeError):
-                    pass
-            
-            response.raise_for_status()
-            
-            # Parse response
-            response_data = response.json()
-            
-            # Clean usage data - only keep integer values
-            usage_data = response_data.get("usage", {})
-            clean_usage = {}
-            for key, value in usage_data.items():
-                if isinstance(value, int):
-                    clean_usage[key] = value
-            
-            # Return as BackendResponse
-            return BackendResponse(
-                content=response_data.get("content", []),
-                model=response_data.get("model", effective_model),
-                stop_reason=response_data.get("stop_reason"),
-                usage=clean_usage if clean_usage else None,
-                raw_response=response_data
-            )
-            
-        except httpx.HTTPStatusError as e:
-            error = convert_backend_error(e, self.name)
-            raise error
-        except Exception as e:
-            raise BackendError(f"Anthropic backend error: {str(e)}", backend=self.name)
+        # Try the request with automatic OAuth token refresh on 401 errors
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                # Prepare headers
+                headers = await self._prepare_request_headers(x_api_key, anthropic_version, anthropic_beta)
+                
+                # Log headers for debugging (excluding sensitive data)
+                safe_headers = {k: v if k != "authorization" else "Bearer ***" for k, v in headers.items()}
+                logger.info(f"Request headers (attempt {attempt + 1}): {safe_headers}")
+                
+                # Make request
+                response = await self.client.post(
+                    f"{self.base_url}/v1/messages",
+                    json=request_data,
+                    headers=headers
+                )
+                
+                # Log response
+                self._log_response(response, request_data, headers)
+                
+                # Check for OAuth-specific errors before raising
+                if response.status_code == 400:
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get("error", {}).get("message", "")
+                        if "This credential is only authorized for use with Claude Code" in error_msg:
+                            logger.error("OAuth token is restricted to Claude Code. This token cannot be used for general API access.")
+                            logger.info("Please use API keys for general Anthropic API access, or obtain an OAuth token with broader permissions.")
+                    except (ValueError, json.JSONDecodeError):
+                        pass
+                
+                # Handle 401 errors (token expired) with automatic refresh
+                if response.status_code == 401 and attempt < max_retries - 1:
+                    oauth_token = await oauth_manager.get_valid_token()
+                    if oauth_token:
+                        logger.info(f"Received 401 error, attempting OAuth token refresh (attempt {attempt + 1}/{max_retries})")
+                        try:
+                            # Force refresh the token
+                            stored_token = oauth_manager.load_token()
+                            if stored_token and stored_token.refresh_token:
+                                await oauth_manager.refresh_access_token(stored_token.refresh_token)
+                                logger.info("OAuth token refreshed successfully, retrying request")
+                                continue  # Retry the request with new token
+                            else:
+                                logger.error("No refresh token available for OAuth token refresh")
+                        except Exception as refresh_error:
+                            logger.error(f"Failed to refresh OAuth token: {refresh_error}")
+                    else:
+                        logger.error("No OAuth token available for refresh")
+                
+                response.raise_for_status()
+                
+                # Parse response
+                response_data = response.json()
+                
+                # Clean usage data - only keep integer values
+                usage_data = response_data.get("usage", {})
+                clean_usage = {}
+                for key, value in usage_data.items():
+                    if isinstance(value, int):
+                        clean_usage[key] = value
+                
+                # Return as BackendResponse
+                return BackendResponse(
+                    content=response_data.get("content", []),
+                    model=response_data.get("model", effective_model),
+                    stop_reason=response_data.get("stop_reason"),
+                    usage=clean_usage if clean_usage else None,
+                    raw_response=response_data
+                )
+                
+            except httpx.HTTPStatusError as e:
+                # If this is the last attempt or not a 401 error, re-raise
+                if attempt == max_retries - 1 or e.response.status_code != 401:
+                    error = convert_backend_error(e, self.name)
+                    raise error
+                # Otherwise, continue to next attempt for 401 errors
+                logger.warning(f"HTTP {e.response.status_code} error on attempt {attempt + 1}, retrying...")
+                
+            except Exception as e:
+                # Non-HTTP errors should not be retried
+                raise BackendError(f"Anthropic backend error: {str(e)}", backend=self.name)
     
     async def create_message_stream(
         self,
@@ -289,7 +317,8 @@ class AnthropicBackend(BaseBackend):
         self,
         messages: List[Dict[str, Any]],
         model: str,
-        system: Optional[str] = None
+        system: Optional[str] = None,
+        **kwargs
     ) -> Dict[str, int]:
         """Count tokens using Anthropic's token counting endpoint."""
         request_data = {
@@ -300,29 +329,70 @@ class AnthropicBackend(BaseBackend):
         if system:
             request_data["system"] = system
             
-        try:
-            # Anthropic has a dedicated token counting endpoint
-            response = await self.client.post(
-                f"{self.base_url}/v1/messages/count_tokens",
-                json=request_data,
-                headers=self._get_headers()
-            )
-            response.raise_for_status()
+        # Extract API headers from kwargs
+        x_api_key = kwargs.get('x_api_key', self.api_key)
+        anthropic_version = kwargs.get('anthropic_version', '2023-06-01')
+        anthropic_beta = kwargs.get('anthropic_beta')
+        
+        # Try the request with automatic OAuth token refresh on 401 errors
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                # Prepare headers
+                headers = await self._prepare_request_headers(x_api_key, anthropic_version, anthropic_beta)
+                
+                # Make request
+                response = await self.client.post(
+                    f"{self.base_url}/v1/messages/count_tokens",
+                    json=request_data,
+                    headers=headers
+                )
+                
+                # Handle 401 errors (token expired) with automatic refresh
+                if response.status_code == 401 and attempt < max_retries - 1:
+                    oauth_token = await oauth_manager.get_valid_token()
+                    if oauth_token:
+                        logger.info(f"Received 401 error in count_tokens, attempting OAuth token refresh (attempt {attempt + 1}/{max_retries})")
+                        try:
+                            # Force refresh the token
+                            stored_token = oauth_manager.load_token()
+                            if stored_token and stored_token.refresh_token:
+                                await oauth_manager.refresh_access_token(stored_token.refresh_token)
+                                logger.info("OAuth token refreshed successfully, retrying count_tokens request")
+                                continue  # Retry the request with new token
+                            else:
+                                logger.error("No refresh token available for OAuth token refresh")
+                        except Exception as refresh_error:
+                            logger.error(f"Failed to refresh OAuth token: {refresh_error}")
+                    else:
+                        logger.error("No OAuth token available for refresh")
+                
+                response.raise_for_status()
+                return response.json()
+                
+            except httpx.HTTPStatusError as e:
+                # If this is the last attempt or not a 401 error, fall back to estimation
+                if attempt == max_retries - 1 or e.response.status_code != 401:
+                    logger.warning(f"Token counting failed: {e}, falling back to estimation")
+                    break
+                # Otherwise, continue to next attempt for 401 errors
+                logger.warning(f"HTTP {e.response.status_code} error on count_tokens attempt {attempt + 1}, retrying...")
+                
+            except Exception as e:
+                logger.warning(f"Token counting failed: {e}, falling back to estimation")
+                break
             
-            return response.json()
-            
-        except Exception:
-            # Fallback: estimate tokens
-            char_count = sum(len(str(msg)) for msg in messages)
-            if system:
-                char_count += len(system)
-            
-            estimated_tokens = char_count // 4  # Rough estimation
-            
-            return {
-                "input_tokens": estimated_tokens,
-                "output_tokens": 0
-            }
+        # Fallback: estimate tokens
+        char_count = sum(len(str(msg)) for msg in messages)
+        if system:
+            char_count += len(system)
+        
+        estimated_tokens = char_count // 4  # Rough estimation
+        
+        return {
+            "input_tokens": estimated_tokens,
+            "output_tokens": 0
+        }
     
     def supports_model(self, model: str) -> bool:
         """Check if this backend supports a given model."""

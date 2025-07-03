@@ -211,8 +211,25 @@ async def create_message_v2(
                         
                 except BackendError as e:
                     has_error = True
-                    # Check if this is a rate limit or credit error
-                    if e.status_code in [429, 402] or "credit" in str(e).lower() or "rate" in str(e).lower():
+                    # Check if this is an error that should disable the model
+                    should_mark_failed = False
+                    
+                    # Check for 400 errors that might indicate unsupported model
+                    if e.status_code == 400:
+                        error_msg = str(e).lower()
+                        unsupported_patterns = [
+                            "model", "not supported", "not found", "invalid model", "unknown model", "does not exist"
+                        ]
+                        if any(pattern in error_msg for pattern in unsupported_patterns):
+                            should_mark_failed = True
+                            logger.warning(f"Model {effective_model} appears unsupported by {backend.name}: {e}")
+                    
+                    # Also check for rate limit and credit errors
+                    elif e.status_code in [429, 402] or "credit" in str(e).lower() or "rate" in str(e).lower():
+                        should_mark_failed = True
+                        logger.warning(f"Model {effective_model} has rate/credit issues: {e}")
+                    
+                    if should_mark_failed:
                         router.mark_model_failure(effective_model)
                         logger.warning(f"Marked model {effective_model} as failed due to: {e}")
                     
@@ -274,22 +291,40 @@ async def create_message_v2(
             router.mark_model_success(effective_model)
             
             return JSONResponse(content=response_dict)
-            
+                
     except BackendError as e:
-        # Check if this is a rate limit or credit error that should disable the model
-        if e.status_code in [429, 402] or "credit" in str(e).lower() or "rate" in str(e).lower():
-            # Mark the model as failed if we know which model was used
-            if 'effective_model' in locals():
-                router.mark_model_failure(effective_model)
-                logger.warning(f"Marked model {effective_model} as failed due to: {e}")
+        # Check if this is an error that should disable the model
+        should_mark_failed = False
+        
+        # Check for 400 errors that might indicate unsupported model
+        if e.status_code == 400:
+            error_msg = str(e).lower()
+            # Look for common patterns that indicate model not supported
+            unsupported_patterns = [
+                "model", "not supported", "not found", "invalid model", "unknown model", "does not exist"
+            ]
+            if any(pattern in error_msg for pattern in unsupported_patterns):
+                should_mark_failed = True
+                logger.warning(f"Model {effective_model} appears unsupported by {backend.name}: {e}")
+        
+        # Also check for rate limit and credit errors
+        elif e.status_code in [429, 402] or "credit" in str(e).lower() or "rate" in str(e).lower():
+            should_mark_failed = True
+            logger.warning(f"Model {effective_model} has rate/credit issues: {e}")
+        
+        # Mark model as failed if applicable
+        if should_mark_failed:
+            router.mark_model_failure(effective_model)
+            logger.warning(f"Marked model {effective_model} as failed due to: {e}")
         
         raise HTTPException(
             status_code=e.status_code or 500,
             detail=e.to_dict()
         )
+        
     except Exception as e:
         # For other errors, also consider marking the model as failed
-        if 'effective_model' in locals() and ("credit" in str(e).lower() or "insufficient" in str(e).lower()):
+        if "credit" in str(e).lower() or "insufficient" in str(e).lower():
             router.mark_model_failure(effective_model)
             logger.warning(f"Marked model {effective_model} as failed due to: {e}")
         

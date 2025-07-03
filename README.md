@@ -10,17 +10,17 @@
 
 ## Unified Gateway for Multiple LLM Providers
 
-InferSwitch is an intelligent API gateway that seamlessly routes requests between multiple Large Language Model (LLM) providers. It acts as a drop-in replacement for the Anthropic API while providing expertise-based routing, automatic failover, smart caching, and the ability to use local models through LM-Studio or other backends.
+InferSwitch is an API gateway that seamlessly routes requests between multiple Large Language Model (LLM) providers. It acts as a drop-in replacement for the Anthropic API while providing expertise-based routing, automatic failover, smart caching, and the ability to use local models through LM-Studio or other backends.
 
 ### Key Features
 
 🚀 **Multi-Provider Support** - Route between Anthropic Claude, OpenAI GPT, OpenRouter models, local LM-Studio models, and any OpenAI-compatible endpoints
 
-🧠 **Custom Expert Routing** - Define your own AI experts with custom descriptions and let MLX intelligently route queries to the most appropriate specialist - no hardcoded patterns needed
+🧠 **Custom Expert Routing** - Define your own AI experts with custom descriptions and let MLX route queries to the most appropriate specialist - no hardcoded patterns needed
 
 🎯 **MLX-Powered Classification** - Local AI models (default: `jedisct1/arch-router-1.5b`, optimized for routing) analyze queries to match them with your custom expert definitions using pure AI classification
 
-💾 **Smart Caching** - Reduce costs and latency with intelligent response caching that ignores irrelevant metadata
+💾 **Smart Caching** - Reduce costs and latency with smart response caching that ignores irrelevant metadata
 
 🔄 **Model Overrides** - Transparently replace expensive models with cheaper alternatives for development and testing
 
@@ -45,7 +45,7 @@ InferSwitch is an intelligent API gateway that seamlessly routes requests betwee
 
 - Python 3.12 or higher
 - (Optional) LM-Studio for local model support
-- (Optional) MLX framework for intelligent routing (automatically installed on Apple Silicon)
+- (Optional) MLX framework for routing (automatically installed on Apple Silicon)
 
 ### Install with uv (Recommended)
 
@@ -123,7 +123,7 @@ curl -X POST http://localhost:1235/v1/messages \
   }'
 ```
 
-You should see Claude respond normally. **That's it!** InferSwitch is now running and ready to intelligently route your requests.
+You should see Claude respond normally. **That's it!** InferSwitch is now running and ready to route your requests.
 
 ### Advanced Quick Start Examples
 
@@ -188,6 +188,21 @@ curl -X POST http://localhost:1235/v1/messages \
   }'
 ```
 
+### Using with AI Coding Agents
+
+InferSwitch can be used with AI coding agents like [Roo Code](https://roocode.ai) to provide intelligent model routing for coding tasks. To configure your coding agent:
+
+1. **Select "Anthropic" as the LLM provider** in your coding agent's settings
+2. **Set the custom base URL** to `http://127.0.0.1:1235` (or whatever host/port you configured InferSwitch to use)
+
+This setup allows the coding agent to leverage InferSwitch's routing capabilities, automatically selecting the most appropriate model based on the complexity and type of coding task while maintaining compatibility with Anthropic's API format.
+
+**Benefits for coding agents:**
+- **Automatic model selection** based on task complexity (simple queries → fast models, complex coding → powerful models)
+- **Cost optimization** by routing routine tasks to cheaper models
+- **Fallback protection** if your primary model is unavailable
+- **Local model support** for offline development or privacy-sensitive projects
+
 ### Using Local Models with LM-Studio
 
 1. **Start LM-Studio** and load a model
@@ -230,14 +245,14 @@ curl -X POST http://localhost:1235/v1/messages \
 
 ## Custom Expert System
 
-InferSwitch's most powerful feature is its custom expert routing system. Unlike traditional rule-based routing, InferSwitch uses MLX language models to intelligently classify queries and route them to your custom-defined experts.
+InferSwitch's most powerful feature is its custom expert routing system. Unlike traditional rule-based routing, InferSwitch uses MLX language models to classify queries and route them to your custom-defined experts.
 
 ### Why Custom Experts?
 
 - **No Hardcoded Patterns**: MLX models understand context and meaning, not just keywords
 - **Domain-Specific Routing**: Create experts for any field - medical, legal, technical, creative
 - **Flexible Definitions**: Define experts with natural language descriptions
-- **Intelligent Matching**: Queries are matched based on semantic similarity to expert descriptions
+- **Smart Matching**: Queries are matched based on semantic similarity to expert descriptions
 - **Multi-Backend Support**: Route different experts to different model providers
 
 ### Expert Setup Example
@@ -371,7 +386,7 @@ InferSwitch selects backends using this priority order:
 
 ### Custom Expert-Based Routing
 
-InferSwitch uses MLX models to intelligently classify queries and route them to your custom-defined experts:
+InferSwitch uses MLX models to classify queries and route them to your custom-defined experts:
 
 - **Capability-Based Experts**: Define experts based on actual AI model capabilities
   - Examples: "coding_specialist", "vision_analyst", "reasoning_engine", "fast_responder"
@@ -827,7 +842,7 @@ InferSwitch uses a modular, extensible architecture built on FastAPI:
    - Request logging and response caching
    - Streaming and non-streaming response support
 
-2. **Intelligent Routing**:
+2. **Routing**:
    - MLX-powered expert classification
    - Custom expert definitions with natural language
    - Fallback chains for high availability

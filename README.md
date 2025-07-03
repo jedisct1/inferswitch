@@ -1,10 +1,12 @@
 # InferSwitch
 
 <div align="center">
-  <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+">
+  <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.8+">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License">
   <img src="https://img.shields.io/badge/FastAPI-0.100+-orange.svg" alt="FastAPI">
 </div>
+
+<img src="https://raw.github.com/jedisct1/inferswitch/master/.media/logo.png" alt="InferSwitch logo" width="600">
 
 ## Unified Gateway for Multiple LLM Providers
 

@@ -41,9 +41,9 @@ InferSwitch is an intelligent API gateway that seamlessly routes requests betwee
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.12 or higher
 - (Optional) LM-Studio for local model support
-- (Optional) MLX framework for difficulty assessment on Apple Silicon
+- (Optional) MLX framework for intelligent routing (automatically installed on Apple Silicon)
 
 ### Install with uv (Recommended)
 
@@ -56,6 +56,8 @@ cd inferswitch
 uv sync
 
 # Run the server
+uv run python main.py
+# or
 uv run python -m inferswitch.main
 ```
 
@@ -70,6 +72,8 @@ cd inferswitch
 pip install -r requirements.txt
 
 # Run the server
+python main.py
+# or
 python -m inferswitch.main
 ```
 
@@ -85,14 +89,26 @@ inferswitch
 
 ## Quick Start
 
-### Basic Usage
+### 5-Minute Setup
 
-1. **Start InferSwitch** (defaults to Anthropic backend):
+1. **Clone and install**:
 ```bash
-uv run python -m inferswitch.main
+git clone https://github.com/jedisct1/inferswitch.git
+cd inferswitch
+uv sync
 ```
 
-2. **Make your first request**:
+2. **Set your API key**:
+```bash
+export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+```
+
+3. **Start InferSwitch**:
+```bash
+uv run python main.py
+```
+
+4. **Test it works**:
 ```bash
 curl -X POST http://localhost:1235/v1/messages \
   -H "Content-Type: application/json" \
@@ -105,12 +121,90 @@ curl -X POST http://localhost:1235/v1/messages \
   }'
 ```
 
+You should see Claude respond normally. **That's it!** InferSwitch is now running and ready to intelligently route your requests.
+
+### Basic Usage Examples
+
+#### Chat with Claude (Default)
+```bash
+curl -X POST http://localhost:1235/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "messages": [{"role": "user", "content": "Explain quantum computing in simple terms"}],
+    "max_tokens": 200
+  }'
+```
+
+#### Enable Streaming
+```bash
+curl -X POST http://localhost:1235/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "messages": [{"role": "user", "content": "Write a short story about a robot"}],
+    "max_tokens": 300,
+    "stream": true
+  }'
+```
+
+#### Test Expert Routing
+```bash
+# Create a simple expert config
+cat > inferswitch.config.json << 'EOF'
+{
+  "force_expert_routing": true,
+  "expert_definitions": {
+    "coding_expert": "A programming specialist for code-related tasks",
+    "general_assistant": "A general-purpose assistant for other tasks"
+  },
+  "expert_models": {
+    "coding_expert": ["claude-3-5-sonnet-20241022"],
+    "general_assistant": ["claude-3-haiku-20240307"]
+  },
+  "model_providers": {
+    "claude-3-5-sonnet-20241022": "anthropic",
+    "claude-3-haiku-20240307": "anthropic"
+  }
+}
+EOF
+
+# Restart InferSwitch
+uv run python main.py
+
+# Test code query (should route to Sonnet)
+curl -X POST http://localhost:1235/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "messages": [{"role": "user", "content": "Debug this Python function: def add(a, b): return a + b + 1"}],
+    "max_tokens": 200
+  }'
+
+# Test general query (should route to Haiku)
+curl -X POST http://localhost:1235/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "messages": [{"role": "user", "content": "What is the capital of France?"}],
+    "max_tokens": 50
+  }'
+```
+
 ### Using Local Models with LM-Studio
 
 1. **Start LM-Studio** and load a model
 2. **Start InferSwitch** with LM-Studio backend:
 ```bash
-INFERSWITCH_BACKEND=lm-studio uv run python -m inferswitch.main
+INFERSWITCH_BACKEND=lm-studio uv run python main.py
 ```
 
 3. **All requests now route to your local model**:
@@ -130,7 +224,7 @@ curl -X POST http://localhost:1235/v1/messages \
 1. **Get an OpenRouter API key** from [openrouter.ai](https://openrouter.ai)
 2. **Start InferSwitch** with OpenRouter backend:
 ```bash
-OPENROUTER_API_KEY=your_key INFERSWITCH_BACKEND=openrouter uv run python -m inferswitch.main
+OPENROUTER_API_KEY=your_key INFERSWITCH_BACKEND=openrouter uv run python main.py
 ```
 
 3. **Access hundreds of models** through OpenRouter:
@@ -325,24 +419,24 @@ Create `inferswitch.config.json` in your working directory:
 
 ### Environment Variables
 
-| Variable                     | Description                            | Default                 |
-| ---------------------------- | -------------------------------------- | ----------------------- |
-| `INFERSWITCH_BACKEND`        | Force all requests to specific backend | `anthropic`             |
-| `INFERSWITCH_FORCE_EXPERT_ROUTING` | Force expert-based routing for all requests | `false`                 |
-| `INFERSWITCH_MLX_MODEL`      | MLX model for expert classification    | `jedisct1/arch-router-1.5b` |
-| `ANTHROPIC_API_KEY`          | Anthropic API key                      | Required for Anthropic  |
-| `OPENAI_API_KEY`             | OpenAI API key                         | Required for OpenAI     |
-| `OPENROUTER_API_KEY`         | OpenRouter API key                     | Required for OpenRouter |
-| `LM_STUDIO_BASE_URL`         | LM-Studio server URL                   | `http://127.0.0.1:1234` |
-| `OPENROUTER_BASE_URL`        | OpenRouter server URL                  | `https://openrouter.ai/api/v1` |
-| `INFERSWITCH_MODEL_OVERRIDE` | Model override mappings                | None                    |
-| `INFERSWITCH_DEFAULT_MODEL`  | Override all models                    | None                    |
-| `CACHE_ENABLED`              | Enable response caching                | `true`                  |
-| `CACHE_MAX_SIZE`             | Maximum cache entries                  | `1000`                  |
-| `CACHE_TTL_SECONDS`          | Cache time-to-live                     | `3600`                  |
-| `LOG_LEVEL`                  | Logging verbosity                      | `INFO`                  |
-| `PROXY_MODE`                 | Enable proxy mode                      | `true`                  |
-| `INFERSWITCH_MODEL_DISABLE_DURATION` | Seconds to disable failed models | `300`                   |
+| Variable                             | Description                                 | Default                        |
+| ------------------------------------ | ------------------------------------------- | ------------------------------ |
+| `INFERSWITCH_BACKEND`                | Force all requests to specific backend      | `anthropic`                    |
+| `INFERSWITCH_FORCE_EXPERT_ROUTING`   | Force expert-based routing for all requests | `false`                        |
+| `INFERSWITCH_MLX_MODEL`              | MLX model for expert classification         | `jedisct1/arch-router-1.5b`    |
+| `ANTHROPIC_API_KEY`                  | Anthropic API key                           | Required for Anthropic         |
+| `OPENAI_API_KEY`                     | OpenAI API key                              | Required for OpenAI            |
+| `OPENROUTER_API_KEY`                 | OpenRouter API key                          | Required for OpenRouter        |
+| `LM_STUDIO_BASE_URL`                 | LM-Studio server URL                        | `http://127.0.0.1:1234`        |
+| `OPENROUTER_BASE_URL`                | OpenRouter server URL                       | `https://openrouter.ai/api/v1` |
+| `INFERSWITCH_MODEL_OVERRIDE`         | Model override mappings                     | None                           |
+| `INFERSWITCH_DEFAULT_MODEL`          | Override all models                         | None                           |
+| `CACHE_ENABLED`                      | Enable response caching                     | `true`                         |
+| `CACHE_MAX_SIZE`                     | Maximum cache entries                       | `1000`                         |
+| `CACHE_TTL_SECONDS`                  | Cache time-to-live                          | `3600`                         |
+| `LOG_LEVEL`                          | Logging verbosity                           | `INFO`                         |
+| `PROXY_MODE`                         | Enable proxy mode                           | `true`                         |
+| `INFERSWITCH_MODEL_DISABLE_DURATION` | Seconds to disable failed models            | `300`                          |
 
 ## Core Concepts
 
@@ -382,10 +476,10 @@ Replace any model transparently:
 
 ```bash
 # Replace all Claude requests with local model
-INFERSWITCH_MODEL_OVERRIDE="claude-3-5-sonnet-20241022:llama-3.1-8b" uv run python -m inferswitch.main
+INFERSWITCH_MODEL_OVERRIDE="claude-3-5-sonnet-20241022:llama-3.1-8b" uv run python main.py
 
 # Replace ALL models with a single model
-INFERSWITCH_DEFAULT_MODEL="llama-3.1-8b" uv run python -m inferswitch.main
+INFERSWITCH_DEFAULT_MODEL="llama-3.1-8b" uv run python main.py
 ```
 
 ### Automatic Model Fallback
@@ -490,7 +584,7 @@ Use your Claude.ai account instead of API keys:
 
 2. **Start InferSwitch** - it will prompt for authentication:
 ```bash
-uv run python -m inferswitch.main
+uv run python main.py
 # Follow the prompts to authenticate via Claude.ai
 ```
 
@@ -526,7 +620,7 @@ Add any OpenAI-compatible endpoint:
 
 1. **Enable caching** for repeated queries:
 ```bash
-CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python -m inferswitch.main
+CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python main.py
 ```
 
 2. **Use expert routing** to minimize costs:
@@ -539,7 +633,229 @@ CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python -m inferswitch.main
 curl http://localhost:1235/cache/stats
 
 # Enable debug logging
-LOG_LEVEL=DEBUG uv run python -m inferswitch.main
+LOG_LEVEL=DEBUG uv run python main.py
+```
+
+### Performance Monitoring
+
+InferSwitch provides built-in monitoring and performance metrics:
+
+```bash
+# View real-time cache statistics
+curl http://localhost:1235/cache/stats
+
+# Check backend health and response times
+curl http://localhost:1235/backends/status
+
+# Monitor request logs
+tail -f requests.log
+
+# Check server logs
+tail -f server.log
+```
+
+Example cache stats output:
+```json
+{
+  "enabled": true,
+  "size": 150,
+  "max_size": 1000,
+  "hit_rate": 0.67,
+  "total_requests": 450,
+  "cache_hits": 302,
+  "cache_misses": 148,
+  "ttl_seconds": 3600
+}
+```
+
+### Cost Optimization
+
+1. **Use expert routing** to route simple queries to cheaper models
+2. **Enable caching** to avoid repeated API calls
+3. **Configure model fallbacks** to use cheaper models when expensive ones fail
+4. **Monitor cache hit rates** to ensure effective caching
+
+```bash
+# Example cost-optimized configuration
+cat > inferswitch.config.json << 'EOF'
+{
+  "force_expert_routing": true,
+  "expert_definitions": {
+    "simple_qa": "Quick questions and simple explanations",
+    "complex_tasks": "Complex reasoning, detailed analysis, and difficult problems"
+  },
+  "expert_models": {
+    "simple_qa": ["claude-3-haiku-20240307"],
+    "complex_tasks": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"]
+  },
+  "model_providers": {
+    "claude-3-haiku-20240307": "anthropic",
+    "claude-3-5-sonnet-20241022": "anthropic"
+  }
+}
+EOF
+
+# Enable caching for cost savings
+CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python main.py
+```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### 1. Server Won't Start
+
+**Problem**: InferSwitch fails to start with port binding errors.
+
+**Solution**:
+```bash
+# Check if port 1235 is already in use
+lsof -i :1235
+
+# Kill existing process or use a different port
+INFERSWITCH_PORT=1236 uv run python main.py
+```
+
+#### 2. Authentication Errors
+
+**Problem**: `401 Unauthorized` or `403 Forbidden` errors.
+
+**Solutions**:
+```bash
+# Check if API key is set correctly
+echo $ANTHROPIC_API_KEY
+
+# Verify API key format (should start with 'sk-ant-')
+export ANTHROPIC_API_KEY="sk-ant-your-key-here"
+
+# For OAuth users, check token status
+curl http://localhost:1235/oauth/status
+```
+
+#### 3. Model Not Found Errors
+
+**Problem**: Model routing fails with "model not found" errors.
+
+**Solution**:
+```bash
+# Check backend status
+curl http://localhost:1235/backends/status
+
+# Verify model mappings in config
+cat inferswitch.config.json | jq '.model_providers'
+
+# Use explicit backend header
+curl -H "x-backend: anthropic" http://localhost:1235/v1/messages
+```
+
+#### 4. MLX Installation Issues (Apple Silicon)
+
+**Problem**: MLX models fail to load on Apple Silicon.
+
+**Solution**:
+```bash
+# Install MLX explicitly
+pip install mlx mlx-lm
+
+# Check MLX model status
+python -c "from inferswitch.mlx_model import mlx_model_manager; print(mlx_model_manager.is_available())"
+
+# Use fallback routing if MLX fails
+INFERSWITCH_FORCE_DIFFICULTY_ROUTING=true uv run python main.py
+```
+
+#### 5. LM-Studio Connection Issues
+
+**Problem**: Cannot connect to LM-Studio backend.
+
+**Solution**:
+```bash
+# Check LM-Studio is running and accessible
+curl http://127.0.0.1:1234/v1/models
+
+# Verify LM-Studio base URL
+LM_STUDIO_BASE_URL=http://127.0.0.1:1234 uv run python main.py
+
+# Check if model is loaded in LM-Studio
+curl http://127.0.0.1:1234/v1/chat/completions \
+  -d '{"model": "llama", "messages": [{"role": "user", "content": "test"}]}'
+```
+
+#### 6. High Memory Usage
+
+**Problem**: InferSwitch consumes excessive memory.
+
+**Solution**:
+```bash
+# Reduce cache size
+CACHE_MAX_SIZE=100 uv run python main.py
+
+# Disable caching entirely
+CACHE_ENABLED=false uv run python main.py
+
+# Use lightweight MLX model
+INFERSWITCH_MLX_MODEL="mlx-community/Qwen2.5-3B-8bit" uv run python main.py
+```
+
+#### 7. Slow Response Times
+
+**Problem**: API responses are slower than expected.
+
+**Solution**:
+```bash
+# Enable cache for repeated queries
+CACHE_ENABLED=true uv run python main.py
+
+# Use faster models for simple queries
+# Configure expert routing with fast models for basic tasks
+
+# Check backend response times
+curl -w "@curl-format.txt" http://localhost:1235/backends/status
+```
+
+#### 8. Configuration Not Loading
+
+**Problem**: Configuration file changes aren't applied.
+
+**Solution**:
+```bash
+# Verify config file location
+ls -la inferswitch.config.json
+
+# Check config file syntax
+python -m json.tool inferswitch.config.json
+
+# Restart server after config changes
+# Config is loaded at startup, not runtime
+```
+
+### Getting Help
+
+If you encounter issues not covered here:
+
+1. **Check the logs**: Enable debug logging with `LOG_LEVEL=DEBUG`
+2. **Verify your setup**: Use the example configurations in `examples/`
+3. **Test individual components**: Run specific tests from the `tests/` directory
+4. **Report bugs**: Create an issue on the GitHub repository
+
+### Debug Commands
+
+```bash
+# Check server health
+curl http://localhost:1235/backends/status
+
+# View cache statistics
+curl http://localhost:1235/cache/stats
+
+# Test specific backend
+curl -H "x-backend: anthropic" -H "Content-Type: application/json" \
+  http://localhost:1235/v1/messages -d '{"model": "claude-3-haiku", "messages": [{"role": "user", "content": "test"}], "max_tokens": 10}'
+
+# Check MLX model loading
+python -c "from inferswitch.mlx_model import mlx_model_manager; mlx_model_manager.load_model()"
+
+# Validate configuration
+python -c "from inferswitch.config import load_config; print(load_config())"
 ```
 
 ## Development
@@ -582,19 +898,100 @@ See `inferswitch/backends/openai.py` for a complete example.
 
 ## Architecture
 
-InferSwitch uses a modular, extensible architecture:
+InferSwitch uses a modular, extensible architecture built on FastAPI:
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Client    │────▶│ InferSwitch  │────▶│  Anthropic  │
-└─────────────┘     │              │     └─────────────┘
-                    │   Router     │     ┌─────────────┐
-                    │      +       │────▶│   OpenAI    │
-                    │   Cache      │     └─────────────┘
-                    │      +       │     ┌─────────────┐
-                    │ Normalizer   │────▶│  LM-Studio  │
-                    └──────────────┘     └─────────────┘
+┌─────────────┐     ┌──────────────────────────────────────┐     ┌─────────────┐
+│   Client    │────▶│            InferSwitch               │────▶│  Anthropic  │
+└─────────────┘     │                                      │     └─────────────┘
+                    │  ┌─────────────┐  ┌─────────────┐    │     ┌─────────────┐
+                    │  │ FastAPI     │  │ MLX Expert  │    │────▶│   OpenAI    │
+                    │  │ Endpoints   │  │ Classifier  │    │     └─────────────┘
+                    │  └─────────────┘  └─────────────┘    │     ┌─────────────┐
+                    │  ┌─────────────┐  ┌─────────────┐    │────▶│  LM-Studio  │
+                    │  │ Smart Cache │  │ Backend     │    │     └─────────────┘
+                    │  │ & Logging   │  │ Registry    │    │     ┌─────────────┐
+                    │  └─────────────┘  └─────────────┘    │────▶│ OpenRouter  │
+                    │                                      │     └─────────────┘
+                    └──────────────────────────────────────┘     ┌─────────────┐
+                                                                 │   Custom    │
+                                                                 │  Backends   │
+                                                                 └─────────────┘
 ```
+
+### Key Components
+
+1. **Request Processing**:
+   - FastAPI handles HTTP requests and validation
+   - Request logging and response caching
+   - Streaming and non-streaming response support
+
+2. **Intelligent Routing**:
+   - MLX-powered expert classification
+   - Custom expert definitions with natural language
+   - Fallback chains for high availability
+
+3. **Backend Abstraction**:
+   - Unified interface for all LLM providers
+   - Automatic format conversion (OpenAI ↔ Anthropic)
+   - Health monitoring and error handling
+
+4. **Configuration Management**:
+   - JSON-based configuration files
+   - Environment variable overrides
+   - Runtime configuration validation
+
+### Request Flow
+
+1. **Client Request**: HTTP request arrives at FastAPI endpoint
+2. **Authentication**: API key validation or OAuth token verification
+3. **Cache Check**: Look for cached responses (ignoring timestamps)
+4. **Expert Classification**: MLX model analyzes query content
+5. **Backend Selection**: Route to appropriate backend based on expert/model mapping
+6. **Format Conversion**: Convert between API formats if needed
+7. **Response Processing**: Handle streaming/non-streaming responses
+8. **Caching & Logging**: Store response and log request details
+
+### Extensibility
+
+- **Add New Backends**: Implement `BaseBackend` interface
+- **Custom Experts**: Define domain-specific routing logic
+- **Plugin System**: Extend functionality through the backend registry
+- **Monitoring**: Built-in metrics and health checks
+
+## Use Cases
+
+### Development & Testing
+- **Local Development**: Use local models via LM-Studio for development
+- **A/B Testing**: Compare different models for the same queries
+- **Cost Control**: Route expensive queries to cheaper models during development
+
+### Production Deployment
+- **High Availability**: Automatic failover between multiple providers
+- **Cost Optimization**: Route simple queries to cheaper models
+- **Performance**: Cache responses to reduce latency and costs
+
+### Specialized Applications
+- **Domain Experts**: Create expert models for specific use cases (legal, medical, technical)
+- **Multi-Modal**: Route vision tasks to vision-capable models
+- **Compliance**: Use specific models for regulatory requirements
+
+## Roadmap
+
+- [ ] **GraphQL Support**: Add GraphQL endpoints alongside REST
+- [ ] **WebSocket Streaming**: Real-time bidirectional communication
+- [ ] **Metrics Dashboard**: Web-based monitoring and analytics
+- [ ] **Model Fine-tuning**: Integration with fine-tuning APIs
+- [ ] **Load Balancing**: Advanced load balancing between backends
+- [ ] **Rate Limiting**: Per-user and per-backend rate limiting
+- [ ] **Kubernetes Deployment**: Helm charts and operators
+
+## Community
+
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/jedisct1/inferswitch/issues)
+- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/jedisct1/inferswitch/discussions)
+- 📚 **Documentation**: [docs/](docs/) directory
+- 🤝 **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 

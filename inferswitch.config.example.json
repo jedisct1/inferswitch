@@ -12,15 +12,45 @@
     "general_assistant": "A well-rounded generalist model capable of handling diverse tasks across multiple domains when no specific model capability is clearly required for the query."
   },
   "expert_models": {
-    "coding_specialist": ["claude-sonnet-4-20250514", "qwen/qwen3-30b-a3b", "openhands-lm-32b-v0.1"],
-    "vision_analyst": ["claude-3-5-sonnet-20241022", "claude-sonnet-4-20250514"],
-    "documentation_writer": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
-    "tool_executor": ["claude-3-5-sonnet-20241022", "qwen/qwen3-30b-a3b"],
-    "commit_generator": ["claude-3-5-haiku-20241022", "qwen/qwen3-1.7b"],
-    "reasoning_engine": ["claude-sonnet-4-20250514", "claude-opus-4-20250514"],
-    "fast_responder": ["claude-3-5-haiku-20241022", "qwen/qwen3-1.7b", "jan-nano-128k"],
-    "multimodal_specialist": ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022"],
-    "general_assistant": ["claude-3-5-sonnet-20241022", "qwen/qwen3-30b-a3b"]
+    "coding_specialist": [
+      "claude-opus-4-20250514",
+      "claude-sonnet-4-20250514",
+      "openhands-lm-32b-v0.1",
+      "qwen/qwen3-30b-a3b"
+    ],
+    "vision_analyst": [
+      "claude-sonnet-4-20250514",
+      "claude-3-5-sonnet-20241022"
+    ],
+    "documentation_writer": [
+      "claude-3-5-sonnet-20241022",
+      "claude-3-5-haiku-20241022"
+    ],
+    "tool_executor": [
+      "claude-3-5-sonnet-20241022",
+      "qwen/qwen3-30b-a3b"
+    ],
+    "commit_generator": [
+      "claude-3-5-haiku-20241022",
+      "qwen/qwen3-1.7b"
+    ],
+    "reasoning_engine": [
+      "claude-opus-4-20250514",
+      "claude-sonnet-4-20250514"
+    ],
+    "fast_responder": [
+      "claude-3-5-haiku-20241022",
+      "qwen/qwen3-1.7b",
+      "jan-nano-128k"
+    ],
+    "multimodal_specialist": [
+      "claude-sonnet-4-20250514",
+      "claude-3-5-sonnet-20241022"
+    ],
+    "general_assistant": [
+      "claude-3-5-sonnet-20241022",
+      "qwen/qwen3-30b-a3b"
+    ]
   },
   "model_providers": {
     "qwen/qwen3-1.7b": "lm-studio",

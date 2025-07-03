@@ -144,8 +144,10 @@ class AnthropicBackend(BaseBackend):
         # Handle max_tokens with model-specific limits
         if max_tokens:
             # Get the maximum allowed tokens for this model
-            model_max = MODEL_MAX_TOKENS.get(effective_model, MODEL_MAX_TOKENS["default"])
-            
+            model_max = MODEL_MAX_TOKENS.get(
+                effective_model, MODEL_MAX_TOKENS["default"]
+            )
+
             if max_tokens > model_max:
                 logger.warning(
                     f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
@@ -154,7 +156,7 @@ class AnthropicBackend(BaseBackend):
                 request_data["max_tokens"] = model_max
             else:
                 request_data["max_tokens"] = max_tokens
-        
+
         if temperature is not None:
             request_data["temperature"] = temperature
 
@@ -165,7 +167,7 @@ class AnthropicBackend(BaseBackend):
             "anthropic_beta",
             "difficulty_rating",
         ]
-        
+
         # Filter out thinking parameter for models that don't support it
         non_thinking_models = [
             "claude-3-5-sonnet-20241022",
@@ -174,12 +176,23 @@ class AnthropicBackend(BaseBackend):
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307",
         ]
-        
+
+        # Parameters that should be filtered out for all Anthropic models
+        filtered_params = ["container", "mcp_servers"]
+
         for key, value in kwargs.items():
             if key not in request_data and key not in internal_params:
                 # Skip thinking parameter for models that don't support it
                 if key == "thinking" and effective_model in non_thinking_models:
-                    logger.debug(f"Filtering out 'thinking' parameter for model {effective_model}")
+                    logger.debug(
+                        f"Filtering out 'thinking' parameter for model {effective_model}"
+                    )
+                    continue
+                # Skip parameters that aren't supported by Anthropic API
+                if key in filtered_params:
+                    logger.debug(
+                        f"Filtering out '{key}' parameter (not supported by Anthropic API)"
+                    )
                     continue
                 request_data[key] = value
 

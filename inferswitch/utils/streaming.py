@@ -6,7 +6,6 @@ import json
 from typing import AsyncGenerator
 
 
-
 async def generate_sse_events(
     message_id: str, content: str, model: str, input_tokens: int
 ) -> AsyncGenerator[bytes, None]:

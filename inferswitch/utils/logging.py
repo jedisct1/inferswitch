@@ -87,3 +87,26 @@ def log_chat_template(endpoint: str, request_dict: dict):
             f.write("\n")
     except Exception as e:
         logger.error(f"Error generating chat template: {e}")
+
+
+def log_streaming_progress(
+    elapsed_seconds: float, tokens_received: int = 0, model: str = None
+):
+    """Log progress for long-running streaming responses."""
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    # Build progress message
+    progress_msg = f"Elapsed: {elapsed_seconds:.1f}s"
+    if tokens_received > 0:
+        progress_msg += f", Tokens received: ~{tokens_received}"
+    if model:
+        progress_msg += f", Model: {model}"
+    progress_msg += " - Response still streaming..."
+
+    # Log to file with full timestamp
+    with open(LOG_FILE, "a") as f:
+        f.write(f"\n[STREAMING PROGRESS] {timestamp}\n")
+        f.write(f"{progress_msg}\n")
+
+    # Log to console using logger (will appear on stderr)
+    logger.info(f"[STREAMING PROGRESS] {progress_msg}")

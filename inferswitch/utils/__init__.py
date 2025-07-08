@@ -2,7 +2,7 @@
 Utility functions for InferSwitch.
 """
 
-from .logging import log_request, log_chat_template
+from .logging import log_request, log_chat_template, log_streaming_progress
 from .chat_template import (
     convert_to_chat_template,
     apply_chat_template,
@@ -35,6 +35,7 @@ from .auth import (
 __all__ = [
     "log_request",
     "log_chat_template",
+    "log_streaming_progress",
     "convert_to_chat_template",
     "apply_chat_template",
     "truncate_chat_template_to_fit",

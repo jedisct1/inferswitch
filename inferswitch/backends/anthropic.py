@@ -4,6 +4,7 @@ Anthropic backend implementation.
 
 import httpx
 import json
+import time
 from typing import Dict, Any, List, Optional, AsyncIterator
 from datetime import datetime
 from .base import BaseBackend, BackendConfig, BackendResponse
@@ -221,10 +222,46 @@ class AnthropicBackend(BaseBackend):
                 }
                 logger.debug(f"Request headers (attempt {attempt + 1}): {safe_headers}")
 
-                # Make request
-                response = await self.client.post(
-                    f"{self.base_url}/v1/messages", json=request_data, headers=headers
-                )
+                # Make request with progress logging
+                import asyncio
+                from ..utils import log_streaming_progress
+
+                # Start progress logging task
+                start_time = time.time()
+                progress_interval = 30.0
+                stop_progress = False
+
+                async def log_progress():
+                    last_log_time = start_time
+                    while not stop_progress:
+                        await asyncio.sleep(1)  # Check every second
+                        current_time = time.time()
+                        elapsed = current_time - start_time
+                        if current_time - last_log_time >= progress_interval:
+                            log_streaming_progress(
+                                elapsed,
+                                0,  # No token count available yet
+                                effective_model,
+                            )
+                            last_log_time = current_time
+
+                # Start progress logging in background
+                progress_task = asyncio.create_task(log_progress())
+
+                try:
+                    response = await self.client.post(
+                        f"{self.base_url}/v1/messages",
+                        json=request_data,
+                        headers=headers,
+                    )
+                finally:
+                    # Stop progress logging
+                    stop_progress = True
+                    progress_task.cancel()
+                    try:
+                        await progress_task
+                    except asyncio.CancelledError:
+                        pass
 
                 # Log response
                 self._log_response(response, request_data, headers)

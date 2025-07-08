@@ -14,6 +14,7 @@ from ..backends import backend_registry, BackendError
 from ..models import MessagesRequest, MessagesResponse, Usage
 from ..utils import (
     log_request,
+    log_streaming_progress,
     estimate_tokens,
     generate_sse_events,
     get_logger,
@@ -223,6 +224,12 @@ async def create_message_v2(
                     collected_content = []
                     message_id = None
 
+                    # Progress tracking
+                    start_time = time.time()
+                    last_progress_time = start_time
+                    progress_interval = 30.0  # Log progress every 30 seconds
+                    token_count = 0
+
                     async for event in backend.create_message_stream(
                         messages=messages,
                         model=effective_model,
@@ -243,7 +250,19 @@ async def create_message_v2(
                         elif event_type == "content_block_delta":
                             delta = event.get("delta", {})
                             if delta.get("type") == "text_delta":
-                                collected_content.append(delta.get("text", ""))
+                                text = delta.get("text", "")
+                                collected_content.append(text)
+                                token_count += len(text.split())  # Rough token estimate
+
+                        # Check if we should log progress
+                        current_time = time.time()
+                        elapsed = current_time - start_time
+                        if current_time - last_progress_time >= progress_interval:
+                            # Log progress immediately (synchronously)
+                            log_streaming_progress(
+                                elapsed, token_count, effective_model
+                            )
+                            last_progress_time = current_time
 
                         # Forward all events without router injection to prevent duplication
                         # Router messages are already added by the backend when needed

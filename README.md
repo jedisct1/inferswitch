@@ -10,7 +10,7 @@
 
 ## Unified Gateway for Multiple LLM Providers
 
-InferSwitch is an API gateway that seamlessly routes requests between multiple Large Language Model (LLM) providers. It acts as a drop-in replacement for the Anthropic API while providing expertise-based routing, automatic failover, smart caching, and the ability to use local models through LM-Studio or other backends.
+InferSwitch is an API gateway that seamlessly routes requests between multiple Large Language Model (LLM) providers. It acts as a drop-in replacement for the Anthropic API while providing custom expert routing, automatic failover, smart caching, and the ability to use local models through LM-Studio or other backends.
 
 ### Key Features
 
@@ -424,10 +424,8 @@ InferSwitch selects backends using this priority order:
 1. **Explicit Header** - `x-backend: lm-studio` in request
 2. **Environment Override** - `INFERSWITCH_BACKEND=lm-studio`
 3. **Expert Routing** - Based on custom expert classification (if configured)
-4. **Expertise Routing** - Based on predefined expertise areas (legacy)
-5. **Difficulty Routing** - Based on query complexity (legacy)
-6. **Model Mapping** - Direct model → backend mapping
-7. **Fallback** - Configured fallback or default to anthropic
+4. **Model Mapping** - Direct model → backend mapping
+5. **Fallback** - Configured fallback or default to anthropic
 
 ### Custom Expert-Based Routing
 
@@ -720,9 +718,6 @@ pip install mlx mlx-lm
 
 # Check MLX model status
 python -c "from inferswitch.mlx_model import mlx_model_manager; print(mlx_model_manager.is_available())"
-
-# Use fallback routing if MLX fails
-INFERSWITCH_FORCE_DIFFICULTY_ROUTING=true uv run python main.py
 ```
 
 #### 5. LM-Studio Connection Issues
@@ -833,7 +828,6 @@ done
 # Run specific test suites
 uv run python tests/test_api.py              # Core API tests
 uv run python tests/test_custom_experts.py   # Custom expert routing
-uv run python tests/test_difficulty_routing.py # Legacy routing logic
 uv run python tests/test_cache.py            # Caching functionality
 uv run python tests/test_streaming.py        # Streaming responses
 ```
@@ -841,7 +835,7 @@ uv run python tests/test_streaming.py        # Streaming responses
 ### Benchmarking
 
 ```bash
-# Benchmark MLX difficulty classifier
+# Benchmark MLX expert classifier
 python benchmarks/benchmark_mlx_classifier.py
 
 # Compare different MLX models

@@ -13,7 +13,7 @@
   },
   "expert_models": {
     "coding_specialist": [
-      "claude-opus-4-20250514",
+      "claude-opus-4-1-20250805",
       "claude-sonnet-4-20250514",
       "openhands-lm-32b-v0.1",
       "qwen/qwen3-30b-a3b"
@@ -37,7 +37,7 @@
       "qwen/qwen3-1.7b"
     ],
     "reasoning_engine": [
-      "claude-opus-4-20250514",
+      "claude-opus-4-1-20250805",
       "claude-sonnet-4-20250514"
     ],
     "fast_responder": [

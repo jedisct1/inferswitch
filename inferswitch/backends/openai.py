@@ -7,9 +7,11 @@ import json
 from typing import Dict, Any, List, Optional, AsyncIterator
 from .base import BaseBackend, BackendConfig, BackendResponse
 from .normalizer import ResponseNormalizer
-from .errors import BackendError, convert_backend_error
+from .errors import BackendError, convert_backend_error, ContextWindowExceededError
 from ..utils.logging import log_request
-from ..utils import estimate_tokens_fallback
+from ..utils import estimate_tokens_fallback, get_logger
+
+logger = get_logger(__name__)
 
 
 class OpenAIBackend(BaseBackend):
@@ -78,6 +80,52 @@ class OpenAIBackend(BaseBackend):
 
             # Make request
             response = await self.client.post("/v1/chat/completions", json=request_data)
+
+            # Check for context window errors before raising
+            if response.status_code == 400:
+                try:
+                    error_data = response.json()
+                    error_msg = ""
+
+                    # OpenAI API error format
+                    if "error" in error_data:
+                        error_info = error_data["error"]
+                        error_msg = error_info.get("message", "")
+                    else:
+                        error_msg = str(error_data)
+
+                    # Check for context window exceeded errors
+                    context_error_indicators = [
+                        "context_length_exceeded",
+                        "maximum context length",
+                        "max_tokens_exceeded",
+                        "exceeds maximum context length",
+                        "request too large",
+                        "token limit exceeded",
+                        "context window",
+                        "input is too long",
+                        "message length exceeds",
+                        "too many tokens",
+                    ]
+
+                    if any(
+                        indicator in error_msg.lower()
+                        for indicator in context_error_indicators
+                    ):
+                        logger.warning(
+                            f"Context window exceeded detected in OpenAI response: {error_msg}"
+                        )
+                        raise ContextWindowExceededError(
+                            message=error_msg,
+                            backend=self.name,
+                            model=effective_model,
+                            messages=messages,  # Store original messages for compression
+                        )
+
+                except (ValueError, json.JSONDecodeError) as parse_error:
+                    logger.debug(f"Could not parse error response: {parse_error}")
+                    pass
+
             response.raise_for_status()
 
             # Parse response
@@ -98,6 +146,9 @@ class OpenAIBackend(BaseBackend):
         except httpx.HTTPStatusError as e:
             error = convert_backend_error(e, self.name)
             raise error
+        except ContextWindowExceededError:
+            # Re-raise context window errors without wrapping
+            raise
         except Exception as e:
             raise BackendError(f"OpenAI backend error: {str(e)}", backend=self.name)
 
@@ -144,6 +195,55 @@ class OpenAIBackend(BaseBackend):
             async with self.client.stream(
                 "POST", "/v1/chat/completions", json=request_data
             ) as response:
+                # Check for context window errors before raising
+                if response.status_code == 400:
+                    try:
+                        # For streaming, we need to read content first
+                        content = await response.aread()
+                        error_data = json.loads(content)
+                        error_msg = ""
+
+                        # OpenAI API error format
+                        if "error" in error_data:
+                            error_info = error_data["error"]
+                            error_msg = error_info.get("message", "")
+                        else:
+                            error_msg = str(error_data)
+
+                        # Check for context window exceeded errors
+                        context_error_indicators = [
+                            "context_length_exceeded",
+                            "maximum context length",
+                            "max_tokens_exceeded",
+                            "exceeds maximum context length",
+                            "request too large",
+                            "token limit exceeded",
+                            "context window",
+                            "input is too long",
+                            "message length exceeds",
+                            "too many tokens",
+                        ]
+
+                        if any(
+                            indicator in error_msg.lower()
+                            for indicator in context_error_indicators
+                        ):
+                            logger.warning(
+                                f"Context window exceeded detected in OpenAI streaming: {error_msg}"
+                            )
+                            raise ContextWindowExceededError(
+                                message=error_msg,
+                                backend=self.name,
+                                model=effective_model,
+                                messages=messages,  # Store original messages for compression
+                            )
+
+                    except (ValueError, json.JSONDecodeError) as parse_error:
+                        logger.debug(
+                            f"Could not parse streaming error response: {parse_error}"
+                        )
+                        pass
+
                 response.raise_for_status()
 
                 # Yield Anthropic-style SSE events
@@ -207,6 +307,9 @@ class OpenAIBackend(BaseBackend):
         except httpx.HTTPStatusError as e:
             error = convert_backend_error(e, self.name)
             raise error
+        except ContextWindowExceededError:
+            # Re-raise context window errors without wrapping
+            raise
         except Exception as e:
             raise BackendError(f"OpenAI streaming error: {str(e)}", backend=self.name)
 
@@ -227,6 +330,9 @@ class OpenAIBackend(BaseBackend):
 
             return response.usage or {"input_tokens": 0, "output_tokens": 0}
 
+        except ContextWindowExceededError:
+            # Re-raise context window errors from create_message
+            raise
         except Exception:
             # Fallback: estimate tokens using common utility
             return estimate_tokens_fallback(messages, system)

@@ -8,7 +8,7 @@ import time
 from typing import Dict, Any, List, Optional, AsyncIterator
 from datetime import datetime
 from .base import BaseBackend, BackendConfig, BackendResponse
-from .errors import BackendError, convert_backend_error
+from .errors import BackendError, convert_backend_error, ContextWindowExceededError
 from ..utils.logging import log_request, log_chat_template
 from ..utils import get_logger, estimate_tokens_fallback
 from ..config import LOG_FILE, MODEL_MAX_TOKENS
@@ -266,23 +266,7 @@ class AnthropicBackend(BaseBackend):
                 # Log response
                 self._log_response(response, request_data, headers)
 
-                # Check for OAuth-specific errors before raising
-                if response.status_code == 400:
-                    try:
-                        error_data = response.json()
-                        error_msg = error_data.get("error", {}).get("message", "")
-                        if (
-                            "This credential is only authorized for use with Claude Code"
-                            in error_msg
-                        ):
-                            logger.error(
-                                "OAuth token is restricted to Claude Code. This token cannot be used for general API access."
-                            )
-                            logger.info(
-                                "Please use API keys for general Anthropic API access, or obtain an OAuth token with broader permissions."
-                            )
-                    except (ValueError, json.JSONDecodeError):
-                        pass
+                # We now check for context window errors before raise_for_status()
 
                 # Handle 401 errors (token expired) with automatic refresh
                 if response.status_code == 401 and attempt < max_retries - 1:
@@ -312,6 +296,41 @@ class AnthropicBackend(BaseBackend):
                             )
                     else:
                         logger.error("No OAuth token available for refresh")
+
+                # Check for context window errors before raising
+                if response.status_code == 400:
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get("error", {}).get("message", "")
+
+                        # Check for context window exceeded errors
+                        context_error_indicators = [
+                            "maximum context length",
+                            "context_length_exceeded",
+                            "max_tokens_exceeded",
+                            "request_too_large",
+                            "exceeds maximum context length",
+                            "message length exceeds limit",
+                            "input is too long",
+                            "token limit",
+                            "context window",
+                        ]
+
+                        if any(
+                            indicator in error_msg.lower()
+                            for indicator in context_error_indicators
+                        ):
+                            logger.warning(
+                                f"Context window exceeded detected in Anthropic response: {error_msg}"
+                            )
+                            raise ContextWindowExceededError(
+                                message=error_msg,
+                                backend=self.name,
+                                model=effective_model,
+                                messages=messages,  # Store original messages for compression
+                            )
+                    except (ValueError, json.JSONDecodeError):
+                        pass
 
                 response.raise_for_status()
 
@@ -344,6 +363,9 @@ class AnthropicBackend(BaseBackend):
                     f"HTTP {e.response.status_code} error on attempt {attempt + 1}, retrying..."
                 )
 
+            except ContextWindowExceededError:
+                # Re-raise context window errors without wrapping
+                raise
             except Exception as e:
                 # Non-HTTP errors should not be retried
                 raise BackendError(
@@ -491,6 +513,41 @@ class AnthropicBackend(BaseBackend):
                     else:
                         logger.error("No OAuth token available for refresh")
 
+                # Check for context window errors before raising
+                if response.status_code == 400:
+                    try:
+                        error_data = response.json()
+                        error_msg = error_data.get("error", {}).get("message", "")
+
+                        # Check for context window exceeded errors
+                        context_error_indicators = [
+                            "maximum context length",
+                            "context_length_exceeded",
+                            "max_tokens_exceeded",
+                            "request_too_large",
+                            "exceeds maximum context length",
+                            "message length exceeds limit",
+                            "input is too long",
+                            "token limit",
+                            "context window",
+                        ]
+
+                        if any(
+                            indicator in error_msg.lower()
+                            for indicator in context_error_indicators
+                        ):
+                            logger.warning(
+                                f"Context window exceeded detected in count_tokens: {error_msg}"
+                            )
+                            raise ContextWindowExceededError(
+                                message=error_msg,
+                                backend=self.name,
+                                model=model,
+                                messages=messages,  # Store original messages for compression
+                            )
+                    except (ValueError, json.JSONDecodeError):
+                        pass
+
                 response.raise_for_status()
                 return response.json()
 
@@ -506,6 +563,9 @@ class AnthropicBackend(BaseBackend):
                     f"HTTP {e.response.status_code} error on count_tokens attempt {attempt + 1}, retrying..."
                 )
 
+            except ContextWindowExceededError:
+                # Re-raise context window errors from count_tokens
+                raise
             except Exception as e:
                 logger.warning(
                     f"Token counting failed: {e}, falling back to estimation"

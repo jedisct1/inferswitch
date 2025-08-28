@@ -123,6 +123,38 @@ class InvalidRequestError(BackendError):
         )
 
 
+class ContextWindowExceededError(BackendError):
+    """Request exceeds model context window."""
+
+    def __init__(
+        self,
+        message: str,
+        backend: Optional[str] = None,
+        model: Optional[str] = None,
+        current_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = None,
+        messages: Optional[list] = None,
+    ):
+        details = {}
+        if model:
+            details["model"] = model
+        if current_tokens:
+            details["current_tokens"] = current_tokens
+        if max_tokens:
+            details["max_tokens"] = max_tokens
+        if messages:
+            details["message_count"] = len(messages)
+
+        super().__init__(
+            message=message,
+            backend=backend,
+            status_code=400,
+            error_type="context_window_exceeded",
+            details=details,
+        )
+        self.messages = messages  # Store original messages for compression
+
+
 def convert_backend_error(error: Exception, backend: str) -> BackendError:
     """
     Convert backend-specific errors to unified BackendError.
@@ -135,6 +167,24 @@ def convert_backend_error(error: Exception, backend: str) -> BackendError:
         Unified BackendError instance
     """
     error_str = str(error).lower()
+
+    # Context window errors - check first as they're often reported as "invalid request"
+    if any(
+        phrase in error_str
+        for phrase in [
+            "context_length_exceeded",
+            "max_tokens_exceeded",
+            "request_too_large",
+            "context window",
+            "maximum context",
+            "token limit exceeded",
+            "context length",
+            "exceeds maximum",
+            "too many tokens",
+            "message too long",
+        ]
+    ):
+        return ContextWindowExceededError(str(error), backend)
 
     # Authentication errors
     if any(

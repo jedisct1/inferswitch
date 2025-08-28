@@ -11,7 +11,9 @@ from fastapi.responses import StreamingResponse, JSONResponse
 
 from ..config import PROXY_MODE, CACHE_ENABLED
 from ..backends import backend_registry, BackendError
+from ..backends.errors import ContextWindowExceededError
 from ..models import MessagesRequest, MessagesResponse, Usage
+from ..utils.compression import message_compressor, CompressionStrategy
 from ..utils import (
     log_request,
     log_streaming_progress,
@@ -293,6 +295,25 @@ async def create_message_v2(
                             }
                             cache.set(request_dict, response_dict)
 
+                except ContextWindowExceededError as e:
+                    has_error = True
+                    # For streaming, we can't retry with compression easily
+                    # Log the error and suggest using non-streaming
+                    logger.error(
+                        "Context window exceeded during streaming. "
+                        "Consider using non-streaming mode for automatic compression."
+                    )
+                    # Send error as SSE event
+                    error_dict = e.to_dict()
+                    error_dict["error"]["suggestion"] = (
+                        "Request exceeds context window. "
+                        "Use non-streaming mode for automatic compression."
+                    )
+                    error_event = {"type": "error", "error": error_dict}
+                    yield f"event: error\ndata: {json.dumps(error_event)}\n\n".encode(
+                        "utf-8"
+                    )
+
                 except BackendError as e:
                     has_error = True
                     # Check if this is an error that should disable the model
@@ -357,18 +378,76 @@ async def create_message_v2(
                 if k not in ["messages", "model", "system", "max_tokens", "temperature"]
             }
 
-            response = await backend.create_message(
-                messages=messages,
-                model=effective_model,
-                system=system,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                x_api_key=x_api_key,
-                anthropic_version=anthropic_version,
-                anthropic_beta=anthropic_beta,
-                difficulty_rating=difficulty_rating,
-                **extra_kwargs,
-            )
+            # Try to send the request, handling context window errors with compression
+            compression_attempts = 0
+            max_compression_attempts = 3
+            current_messages = messages
+            compression_notice_added = False
+
+            while compression_attempts < max_compression_attempts:
+                try:
+                    response = await backend.create_message(
+                        messages=current_messages,
+                        model=effective_model,
+                        system=system,
+                        max_tokens=request.max_tokens,
+                        temperature=request.temperature,
+                        x_api_key=x_api_key,
+                        anthropic_version=anthropic_version,
+                        anthropic_beta=anthropic_beta,
+                        difficulty_rating=difficulty_rating,
+                        **extra_kwargs,
+                    )
+                    break  # Success, exit the retry loop
+
+                except ContextWindowExceededError as e:
+                    compression_attempts += 1
+
+                    if compression_attempts >= max_compression_attempts:
+                        logger.error(
+                            f"Failed to compress messages after {max_compression_attempts} attempts"
+                        )
+                        raise  # Re-raise the original error after max attempts
+
+                    logger.warning(
+                        f"Context window exceeded for {effective_model}. "
+                        f"Attempting compression (attempt {compression_attempts}/{max_compression_attempts})"
+                    )
+
+                    # Use stored messages from the error if available
+                    messages_to_compress = (
+                        e.messages
+                        if hasattr(e, "messages") and e.messages
+                        else current_messages
+                    )
+
+                    # Compress messages using MLX-powered compression
+                    target_ratio = 0.7 - (
+                        0.1 * compression_attempts
+                    )  # More aggressive each attempt
+                    compression_result = message_compressor.compress_messages(
+                        messages=messages_to_compress,
+                        model=effective_model,
+                        target_ratio=max(0.3, target_ratio),  # Don't go below 30%
+                        strategy=CompressionStrategy.HYBRID
+                        if compression_attempts > 1
+                        else None,
+                    )
+
+                    current_messages = compression_result.messages
+                    compression_notice_added = True
+
+                    logger.info(
+                        f"Compressed {compression_result.original_count} messages "
+                        f"({compression_result.original_tokens} tokens) to "
+                        f"{compression_result.compressed_count} messages "
+                        f"({compression_result.compressed_tokens} tokens) "
+                        f"using {compression_result.strategy_used.value} strategy"
+                    )
+
+                    # Update request_dict for cache key if compression was applied
+                    if compression_notice_added:
+                        request_dict["messages"] = current_messages
 
             # Convert to API response format - use response content as-is
             # Router messages are already added by the backend when needed
@@ -393,6 +472,100 @@ async def create_message_v2(
             router.mark_model_success(effective_model)
 
             return JSONResponse(content=response_dict)
+
+    except ContextWindowExceededError as e:
+        # Try to compress and retry for non-streaming requests
+        compression_attempts = 0
+        max_compression_attempts = 3
+        current_messages = messages
+
+        while compression_attempts < max_compression_attempts:
+            compression_attempts += 1
+
+            logger.warning(
+                f"Context window exceeded. Attempting compression "
+                f"(attempt {compression_attempts}/{max_compression_attempts})"
+            )
+
+            # Use stored messages from the error if available
+            messages_to_compress = (
+                e.messages
+                if hasattr(e, "messages") and e.messages
+                else current_messages
+            )
+
+            # Compress messages
+            target_ratio = 0.7 - (0.1 * compression_attempts)
+            compression_result = message_compressor.compress_messages(
+                messages=messages_to_compress,
+                model=effective_model,
+                target_ratio=max(0.3, target_ratio),
+                strategy=CompressionStrategy.HYBRID
+                if compression_attempts > 1
+                else None,
+            )
+
+            current_messages = compression_result.messages
+
+            logger.info(
+                f"Compressed to {compression_result.compressed_count} messages "
+                f"({compression_result.compressed_tokens} tokens)"
+            )
+
+            try:
+                # Retry with compressed messages
+                extra_kwargs = {
+                    k: v
+                    for k, v in request_dict.items()
+                    if k
+                    not in ["messages", "model", "system", "max_tokens", "temperature"]
+                }
+
+                response = await backend.create_message(
+                    messages=current_messages,
+                    model=effective_model,
+                    system=system,
+                    max_tokens=request.max_tokens,
+                    temperature=request.temperature,
+                    x_api_key=x_api_key,
+                    anthropic_version=anthropic_version,
+                    anthropic_beta=anthropic_beta,
+                    difficulty_rating=difficulty_rating,
+                    **extra_kwargs,
+                )
+
+                # Success! Convert and return response
+                all_content = response.content
+                response_dict = {
+                    "id": response.raw_response.get("id", "msg_unknown"),
+                    "type": "message",
+                    "role": "assistant",
+                    "content": all_content,
+                    "model": response.model,
+                    "stop_reason": response.stop_reason,
+                    "stop_sequence": response.raw_response.get("stop_sequence"),
+                    "usage": response.usage,
+                }
+
+                # Cache the response with compressed request
+                if cache:
+                    compressed_request = request_dict.copy()
+                    compressed_request["messages"] = current_messages
+                    cache.set(compressed_request, response_dict)
+
+                router.mark_model_success(effective_model)
+                return JSONResponse(content=response_dict)
+
+            except ContextWindowExceededError as retry_error:
+                # Still exceeding, continue loop
+                e = retry_error
+                continue
+            except Exception as other_error:
+                # Different error, handle normally
+                raise other_error
+
+        # Max attempts reached, raise original error
+        raise HTTPException(status_code=e.status_code or 500, detail=e.to_dict())
 
     except BackendError as e:
         # Check if this is an error that should disable the model

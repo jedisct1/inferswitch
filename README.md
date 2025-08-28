@@ -14,7 +14,7 @@ InferSwitch is an API gateway that seamlessly routes requests between multiple L
 
 ### Key Features
 
-🚀 **Multi-Provider Support** - Route between Anthropic Claude, OpenAI GPT, OpenRouter models, local LM-Studio models, and any OpenAI-compatible endpoints
+🚀 **Multi-Provider Support** - Route between Anthropic Claude (including Claude 4 models), OpenAI GPT, OpenRouter models, local LM-Studio models, and any OpenAI-compatible endpoints
 
 🧠 **Custom Expert Routing** - Define your own AI experts with custom descriptions and let MLX route queries to the most appropriate specialist - no hardcoded patterns needed
 
@@ -25,6 +25,8 @@ InferSwitch is an API gateway that seamlessly routes requests between multiple L
 🔄 **Model Overrides** - Transparently replace expensive models with cheaper alternatives for development and testing
 
 🔐 **OAuth Support** - Use your Claude.ai account instead of managing API keys
+
+🗜️ **Intelligent Context Compression** - Automatically compress requests that exceed model context windows using MLX-powered intelligence
 
 ## Table of Contents
 
@@ -335,14 +337,14 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
 ```
 
 2. **Start InferSwitch** - it automatically routes using MLX classification:
-   - "Debug this React component" → `coding_specialist` → Claude Opus 4
-   - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4
-   - "Write API documentation" → `documentation_writer` → Claude Sonnet 4
+   - "Debug this React component" → `coding_specialist` → Claude Opus 4 (1M context)
+   - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4 (1M context)
+   - "Write API documentation" → `documentation_writer` → Claude Sonnet 4 (1M context)
    - "Generate commit message for these changes" → `commit_generator` → Claude 3.5 Haiku
-   - "Call this API endpoint" → `tool_executor` → Claude Sonnet 4
-   - "Solve this complex math problem" → `reasoning_engine` → Claude Opus 4
+   - "Call this API endpoint" → `tool_executor` → Claude Sonnet 4 (1M context)
+   - "Solve this complex math problem" → `reasoning_engine` → Claude Opus 4 (1M context)
    - "What's 2+2?" → `fast_responder` → Claude 3.5 Haiku
-   - "Analyze this mixed text and image content" → `multimodal_specialist` → Claude Sonnet 4
+   - "Analyze this mixed text and image content" → `multimodal_specialist` → Claude Sonnet 4 (1M context)
    - "Help me plan my day" → `general_assistant` → Claude 3.7 Sonnet
 
 The MLX model analyzes each query against your expert descriptions and routes to the best match - no keyword patterns or hardcoded rules needed!
@@ -457,6 +459,29 @@ INFERSWITCH_MODEL_OVERRIDE="claude-3-5-sonnet-20241022:llama-3.1-8b" uv run pyth
 INFERSWITCH_DEFAULT_MODEL="llama-3.1-8b" uv run python main.py
 ```
 
+### Intelligent Context Compression
+
+InferSwitch automatically compresses requests that exceed model context windows using MLX-powered intelligence:
+
+- **Automatic Detection**: Detects context window errors from all backends
+- **MLX-Powered Scoring**: Uses MLX models to score message importance
+- **Multiple Strategies**: Truncation, summarization, hybrid compression
+- **Quality Preservation**: Maintains conversation coherence during compression
+- **Transparent**: Adds compression notices to inform LLM agents
+- **Progressive**: More aggressive compression on retry attempts
+
+Configuration:
+```json
+{
+  "compression": {
+    "enabled": true,
+    "max_attempts": 3,
+    "target_ratio": 0.7,
+    "strategy": "auto"
+  }
+}
+```
+
 ### Automatic Model Fallback
 
 InferSwitch provides automatic fallback when models fail due to rate limits or insufficient credits:
@@ -506,6 +531,8 @@ Count tokens in messages without making a completion request.
 
 #### POST /v1/chat/completions
 OpenAI-style chat completions (automatically converted to/from Anthropic format).
+
+**Note:** The `/v1/models` endpoint is not currently implemented.
 
 ### InferSwitch Extensions
 
@@ -830,6 +857,8 @@ uv run python tests/test_api.py              # Core API tests
 uv run python tests/test_custom_experts.py   # Custom expert routing
 uv run python tests/test_cache.py            # Caching functionality
 uv run python tests/test_streaming.py        # Streaming responses
+uv run python tests/test_compression.py      # Intelligent compression
+uv run python tests/test_context_window_detection.py  # Context window detection
 ```
 
 ### Benchmarking

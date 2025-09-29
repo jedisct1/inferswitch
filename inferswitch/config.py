@@ -47,6 +47,8 @@ MODEL_CONTEXT_SIZES = {
     "claude-4-20250514": 200000,
     "claude-sonnet-4": 1000000,
     "claude-sonnet-4-20250514": 200000,
+    "claude-sonnet-4-1": 200000,
+    "claude-sonnet-4-5": 200000,
     "claude-opus-4": 200000,
     "claude-4-opus": 200000,
     "claude-opus-4-1": 200000,
@@ -69,6 +71,8 @@ MODEL_MAX_TOKENS = {
     "claude-4-opus-20250514": 32000,
     "claude-4-sonnet-20250514": 64000,
     "claude-sonnet-4-20250514": 64000,
+    "claude-sonnet-4-1": 64000,
+    "claude-sonnet-4-5": 64000,
     # Default for unknown models
     "default": 4096,
 }

@@ -43,6 +43,7 @@ MODEL_CONTEXT_SIZES = {
     "claude-3-5-haiku": 200000,
     "claude-3-5-haiku-20241022": 200000,
     # Claude 4
+    "claude-haiku-4-5-20251001": 200000,
     "claude-4": 200000,
     "claude-4-20250514": 200000,
     "claude-sonnet-4": 1000000,
@@ -66,6 +67,7 @@ MODEL_MAX_TOKENS = {
     "claude-3-5-sonnet-20241022": 8192,
     "claude-3-5-haiku-20241022": 4096,
     # Claude 4 (these models support higher limits)
+    "claude-haiku-4-5-20251001": 8192,
     "claude-opus-4-20250514": 32000,
     "claude-opus-4-1-20250805": 32000,
     "claude-4-opus-20250514": 32000,

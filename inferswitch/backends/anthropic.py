@@ -587,6 +587,7 @@ class AnthropicBackend(BaseBackend):
             "claude-3-opus-20240229",
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307",
+            "claude-haiku-4-5-20251001",
             "claude-opus-4-20250514",
             "claude-sonnet-4-20250514",
             "claude-4-opus-20250514",

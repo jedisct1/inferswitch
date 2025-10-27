@@ -381,74 +381,235 @@ class AnthropicBackend(BaseBackend):
         temperature: Optional[float] = None,
         **kwargs,
     ) -> AsyncIterator[Dict[str, Any]]:
-        """Create a streaming message - Anthropic always returns non-streaming, so we convert."""
-        # Remove 'stream' from kwargs if present to avoid duplicate
-        kwargs_copy = kwargs.copy()
-        kwargs_copy.pop("stream", None)
+        """Create a streaming message using Anthropic's streaming API."""
+        # Get the effective model to use
+        effective_model = self.get_effective_model(model)
 
-        # Get the non-streaming response
-        response = await self.create_message(
-            messages=messages,
-            model=model,
-            system=system,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            stream=False,
-            **kwargs_copy,
-        )
+        # Check if this model needs thinking support
+        anthropic_beta = kwargs.get("anthropic_beta")
+        thinking_models = [
+            "claude-opus-4-20250514",
+            "claude-sonnet-4-20250514",
+            "claude-4-opus-20250514",
+            "claude-4-sonnet-20250514",
+        ]
 
-        # Convert to SSE stream events
-        # Message start
-        yield {
-            "type": "message_start",
-            "message": {
-                "id": response.raw_response.get("id", "msg_unknown"),
-                "type": "message",
-                "role": "assistant",
-                "content": [],
-                "model": response.model,
-                "stop_reason": None,
-                "stop_sequence": None,
-                "usage": response.usage or {"input_tokens": 0, "output_tokens": 0},
-            },
+        if effective_model in thinking_models:
+            if not anthropic_beta:
+                anthropic_beta = "interleaved-thinking-2025-05-14"
+            elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
+                anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
+            kwargs["anthropic_beta"] = anthropic_beta
+
+        # Build request data with streaming enabled
+        request_data = {
+            "model": effective_model,
+            "messages": messages,
+            "stream": True,  # Enable streaming
         }
 
-        # Content blocks
-        for idx, content_block in enumerate(response.content):
-            # Content block start
-            yield {
-                "type": "content_block_start",
-                "index": idx,
-                "content_block": content_block,
+        # Check if we're using OAuth
+        oauth_token = await oauth_manager.get_valid_token()
+        if oauth_token:
+            claude_code_system = {
+                "type": "text",
+                "text": "You are Claude Code, Anthropic's official CLI for Claude.",
             }
 
-            # Content block delta (send the whole text as one delta)
-            if content_block.get("type") == "text":
-                yield {
-                    "type": "content_block_delta",
-                    "index": idx,
-                    "delta": {
-                        "type": "text_delta",
-                        "text": content_block.get("text", ""),
-                    },
+            if system:
+                if isinstance(system, str):
+                    request_data["system"] = [
+                        claude_code_system,
+                        {"type": "text", "text": system},
+                    ]
+                elif isinstance(system, list):
+                    request_data["system"] = [claude_code_system] + system
+                else:
+                    request_data["system"] = [claude_code_system]
+            else:
+                request_data["system"] = [claude_code_system]
+        else:
+            if system:
+                request_data["system"] = system
+
+        # Handle max_tokens with model-specific limits
+        if max_tokens:
+            model_max = MODEL_MAX_TOKENS.get(
+                effective_model, MODEL_MAX_TOKENS["default"]
+            )
+            if max_tokens > model_max:
+                logger.warning(
+                    f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
+                    f"Capping to {model_max}."
+                )
+                request_data["max_tokens"] = model_max
+            else:
+                request_data["max_tokens"] = max_tokens
+
+        if temperature is not None:
+            request_data["temperature"] = temperature
+
+        # Add any additional parameters
+        internal_params = [
+            "x_api_key",
+            "anthropic_version",
+            "anthropic_beta",
+            "difficulty_rating",
+        ]
+        filtered_params = ["container", "mcp_servers"]
+        non_thinking_models = [
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+        ]
+
+        for key, value in kwargs.items():
+            if key not in request_data and key not in internal_params:
+                if key == "thinking" and effective_model in non_thinking_models:
+                    logger.debug(
+                        f"Filtering out 'thinking' parameter for model {effective_model}"
+                    )
+                    continue
+                if key in filtered_params:
+                    logger.debug(
+                        f"Filtering out '{key}' parameter (not supported by Anthropic API)"
+                    )
+                    continue
+                request_data[key] = value
+
+        # Extract API headers
+        x_api_key = kwargs.get("x_api_key", self.api_key)
+        anthropic_version = kwargs.get("anthropic_version", "2023-06-01")
+        anthropic_beta = kwargs.get("anthropic_beta")
+
+        # Log request
+        log_request("/v1/messages", request_data, kwargs.get("difficulty_rating"))
+        log_chat_template("/v1/messages", request_data)
+
+        # Try the request with automatic OAuth token refresh on 401 errors
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                # Prepare headers
+                headers = await self._prepare_request_headers(
+                    x_api_key, anthropic_version, anthropic_beta
+                )
+
+                # Log headers for debugging
+                safe_headers = {
+                    k: v if k != "authorization" else "Bearer ***"
+                    for k, v in headers.items()
                 }
+                logger.debug(f"Streaming request headers (attempt {attempt + 1}): {safe_headers}")
 
-            # Content block stop
-            yield {"type": "content_block_stop", "index": idx}
+                # Make streaming request
+                async with self.client.stream(
+                    "POST",
+                    f"{self.base_url}/v1/messages",
+                    json=request_data,
+                    headers=headers,
+                ) as response:
+                    # Handle 401 errors with OAuth token refresh
+                    if response.status_code == 401 and attempt < max_retries - 1:
+                        oauth_token = await oauth_manager.get_valid_token()
+                        if oauth_token:
+                            logger.info(
+                                f"Received 401 error in streaming, attempting OAuth token refresh (attempt {attempt + 1}/{max_retries})"
+                            )
+                            try:
+                                stored_token = oauth_manager.load_token()
+                                if stored_token and stored_token.refresh_token:
+                                    await oauth_manager.refresh_access_token(
+                                        stored_token.refresh_token
+                                    )
+                                    logger.info(
+                                        "OAuth token refreshed successfully, retrying streaming request"
+                                    )
+                                    continue
+                            except Exception as refresh_error:
+                                logger.error(
+                                    f"Failed to refresh OAuth token: {refresh_error}"
+                                )
 
-        # Message delta
-        yield {
-            "type": "message_delta",
-            "delta": {"stop_reason": response.stop_reason},
-            "usage": {
-                "output_tokens": response.usage.get("output_tokens", 0)
-                if response.usage
-                else 0
-            },
-        }
+                    # Check for errors before streaming
+                    if response.status_code != 200:
+                        error_text = await response.aread()
+                        try:
+                            error_data = json.loads(error_text)
+                            error_msg = error_data.get("error", {}).get("message", "")
 
-        # Message stop
-        yield {"type": "message_stop"}
+                            # Check for context window errors
+                            if response.status_code == 400:
+                                context_error_indicators = [
+                                    "maximum context length",
+                                    "context_length_exceeded",
+                                    "max_tokens_exceeded",
+                                    "request_too_large",
+                                    "exceeds maximum context length",
+                                    "message length exceeds limit",
+                                    "input is too long",
+                                    "token limit",
+                                    "context window",
+                                ]
+                                if any(
+                                    indicator in error_msg.lower()
+                                    for indicator in context_error_indicators
+                                ):
+                                    logger.warning(
+                                        f"Context window exceeded in streaming: {error_msg}"
+                                    )
+                                    raise ContextWindowExceededError(
+                                        message=error_msg,
+                                        backend=self.name,
+                                        model=effective_model,
+                                        messages=messages,
+                                    )
+                        except (ValueError, json.JSONDecodeError):
+                            pass
+
+                        response.raise_for_status()
+
+                    # Stream the response line by line
+                    async for line in response.aiter_lines():
+                        line = line.strip()
+                        if not line:
+                            continue
+
+                        # Parse SSE format: "event: <type>" and "data: <json>"
+                        if line.startswith("event:"):
+                            continue  # Skip event type lines, we get type from data
+
+                        if line.startswith("data:"):
+                            data_str = line[5:].strip()  # Remove "data:" prefix
+                            if data_str == "[DONE]":
+                                break
+
+                            try:
+                                event_data = json.loads(data_str)
+                                yield event_data
+                            except json.JSONDecodeError as e:
+                                logger.warning(f"Failed to parse SSE data: {e}, line: {data_str}")
+                                continue
+
+                # Success, exit retry loop
+                break
+
+            except httpx.HTTPStatusError as e:
+                if attempt == max_retries - 1 or e.response.status_code != 401:
+                    error = convert_backend_error(e, self.name)
+                    raise error
+                logger.warning(
+                    f"HTTP {e.response.status_code} error in streaming (attempt {attempt + 1}), retrying..."
+                )
+
+            except ContextWindowExceededError:
+                raise
+            except Exception as e:
+                raise BackendError(
+                    f"Anthropic streaming error: {str(e)}", backend=self.name
+                )
 
     async def count_tokens(
         self,

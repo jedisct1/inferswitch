@@ -162,6 +162,22 @@ class BackendRegistry:
                 summary[name] = ["dynamic"]  # For backends with dynamic model lists
         return summary
 
+    def get_capabilities_summary(self) -> Dict[str, Dict[str, bool]]:
+        """
+        Get capabilities summary for all backends.
+
+        Returns:
+            Dictionary mapping backend names to their capabilities
+        """
+        summary = {}
+        for name, backend in self.backends.items():
+            summary[name] = {
+                "streaming": True,  # All backends support streaming
+                "token_counting": True,  # All backends support token counting
+                "system_messages": True,  # All backends support system messages
+            }
+        return summary
+
 
 # Global registry instance
 backend_registry = BackendRegistry()

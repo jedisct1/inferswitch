@@ -97,7 +97,9 @@ class AnthropicBackend(BaseBackend):
             "claude-sonnet-4-20250514",
             "claude-4-opus-20250514",
             "claude-4-sonnet-20250514",
+            "claude-sonnet-4-5",
             # Note: claude-3-5-sonnet-20241022 and claude-3-5-haiku-20241022 do not support thinking mode
+            # Note: claude-haiku-4-5-20251001 does not support thinking mode
         ]
 
         if effective_model in thinking_models:
@@ -404,6 +406,7 @@ class AnthropicBackend(BaseBackend):
             "claude-sonnet-4-20250514",
             "claude-4-opus-20250514",
             "claude-4-sonnet-20250514",
+            "claude-sonnet-4-5",
         ]
 
         if effective_model in thinking_models:

@@ -232,7 +232,17 @@ class AnthropicBackend(BaseBackend):
                         {"type": "text", "text": system},
                     ]
                 elif isinstance(system, list):
-                    request_data["system"] = [claude_code_system] + system
+                    # Check if Claude Code message already exists to avoid duplicates
+                    has_claude_code = any(
+                        isinstance(msg, dict) and
+                        msg.get("type") == "text" and
+                        msg.get("text") == "You are Claude Code, Anthropic's official CLI for Claude."
+                        for msg in system
+                    )
+                    if has_claude_code:
+                        request_data["system"] = system
+                    else:
+                        request_data["system"] = [claude_code_system] + system
                 else:
                     request_data["system"] = [claude_code_system]
             else:
@@ -610,7 +620,17 @@ class AnthropicBackend(BaseBackend):
                         {"type": "text", "text": system},
                     ]
                 elif isinstance(system, list):
-                    request_data["system"] = [claude_code_system] + system
+                    # Check if Claude Code message already exists to avoid duplicates
+                    has_claude_code = any(
+                        isinstance(msg, dict) and
+                        msg.get("type") == "text" and
+                        msg.get("text") == "You are Claude Code, Anthropic's official CLI for Claude."
+                        for msg in system
+                    )
+                    if has_claude_code:
+                        request_data["system"] = system
+                    else:
+                        request_data["system"] = [claude_code_system] + system
                 else:
                     request_data["system"] = [claude_code_system]
             else:

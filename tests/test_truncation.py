@@ -4,11 +4,12 @@ Test the intelligent chat template truncation functionality.
 """
 
 import sys
-import os
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from main import convert_to_chat_template, truncate_chat_template_to_fit
+from inferswitch.utils.chat_template import convert_to_chat_template, truncate_chat_template_to_fit
 
 
 def create_large_conversation(num_exchanges=50):

@@ -120,14 +120,23 @@ class AnthropicBackend(BaseBackend):
 
         # Check if first content block is a thinking block
         first_block = content[0] if isinstance(content, list) else None
-        if first_block and isinstance(first_block, dict):
-            block_type = first_block.get("type")
-            if block_type not in ["thinking", "redacted_thinking"]:
-                logger.debug(
-                    f"Last assistant message (pos {last_assistant_idx}) starts with '{block_type}' "
-                    f"instead of thinking block (incompatible)"
-                )
-                return False
+
+        # If first block doesn't exist or is not a dict, it's incompatible
+        if not first_block or not isinstance(first_block, dict):
+            logger.debug(
+                f"Last assistant message (pos {last_assistant_idx}) has invalid first block "
+                f"(not a dict), incompatible with thinking"
+            )
+            return False
+
+        # Check if the block type is thinking or redacted_thinking
+        block_type = first_block.get("type")
+        if block_type not in ["thinking", "redacted_thinking"]:
+            logger.debug(
+                f"Last assistant message (pos {last_assistant_idx}) starts with '{block_type}' "
+                f"instead of thinking block (incompatible)"
+            )
+            return False
 
         return True
 
@@ -153,6 +162,7 @@ class AnthropicBackend(BaseBackend):
             "claude-4-opus-20250514",
             "claude-4-sonnet-20250514",
             "claude-sonnet-4-5",
+            "claude-sonnet-4-5-20250929",
             # Note: claude-3-5-sonnet-20241022 and claude-3-5-haiku-20241022 do not support thinking mode
             # Note: claude-haiku-4-5-20251001 does not support thinking mode
         ]
@@ -535,6 +545,7 @@ class AnthropicBackend(BaseBackend):
             "claude-4-opus-20250514",
             "claude-4-sonnet-20250514",
             "claude-sonnet-4-5",
+            "claude-sonnet-4-5-20250929",
         ]
 
         if effective_model in thinking_models:
@@ -982,6 +993,8 @@ class AnthropicBackend(BaseBackend):
             "claude-sonnet-4-20250514",
             "claude-4-opus-20250514",
             "claude-4-sonnet-20250514",
+            "claude-sonnet-4-5",
+            "claude-sonnet-4-5-20250929",
         ]
         return model in anthropic_models
 

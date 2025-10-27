@@ -276,32 +276,37 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
   },
   "expert_models": {
     "coding_specialist": [
-      "claude-opus-4-20250514",
-      "claude-sonnet-4-20250514",
+      "claude-sonnet-4-5",
+      "claude-haiku-4-5-20251001",
+      "claude-opus-4-1-20250805",
       "openhands-lm-32b-v0.1",
       "qwen/qwen3-30b-a3b"
     ],
     "vision_analyst": [
-      "claude-sonnet-4-20250514",
+      "claude-sonnet-4-5",
+      "claude-haiku-4-5-20251001",
       "claude-3-7-sonnet-20250219"
     ],
     "documentation_writer": [
-      "claude-sonnet-4-20250514",
+      "claude-haiku-4-5-20251001",
+      "claude-sonnet-4-5",
       "claude-3-7-sonnet-20250219",
       "qwen/qwen3-30b-a3b"
     ],
     "tool_executor": [
-      "claude-sonnet-4-20250514",
+      "claude-haiku-4-5-20251001",
+      "claude-sonnet-4-5",
       "claude-3-7-sonnet-20250219",
       "qwen/qwen3-30b-a3b"
     ],
     "commit_generator": [
+      "claude-haiku-4-5-20251001",
       "claude-3-5-haiku-20241022",
       "qwen/qwen3-1.7b"
     ],
     "reasoning_engine": [
-      "claude-opus-4-20250514",
-      "claude-sonnet-4-20250514"
+      "claude-sonnet-4-5",
+      "claude-opus-4-1-20250805"
     ],
     "fast_responder": [
       "claude-3-5-haiku-20241022",
@@ -309,10 +314,12 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
       "qwen/qwen3-1.7b"
     ],
     "multimodal_specialist": [
-      "claude-sonnet-4-20250514",
+      "claude-sonnet-4-5",
+      "claude-haiku-4-5-20251001",
       "claude-3-7-sonnet-20250219"
     ],
     "general_assistant": [
+      "claude-haiku-4-5-20251001",
       "claude-3-7-sonnet-20250219",
       "qwen/qwen3-30b-a3b",
       "jan-nano-128k"
@@ -326,8 +333,9 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
     "claude-3-5-haiku-20241022": "anthropic",
     "claude-3-5-sonnet-20241022": "anthropic",
     "claude-3-7-sonnet-20250219": "anthropic",
-    "claude-sonnet-4-20250514": "anthropic",
-    "claude-opus-4-20250514": "anthropic"
+    "claude-haiku-4-5-20251001": "anthropic",
+    "claude-sonnet-4-5": "anthropic",
+    "claude-opus-4-1-20250805": "anthropic"
   },
   "fallback": {
     "provider": "lm-studio",

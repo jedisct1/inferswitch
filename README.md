@@ -337,14 +337,14 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
 ```
 
 2. Start InferSwitch - it automatically routes using MLX classification:
-   - "Debug this React component" → `coding_specialist` → Claude Opus 4 (1M context)
-   - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4 (1M context)
-   - "Write API documentation" → `documentation_writer` → Claude Sonnet 4 (1M context)
+   - "Debug this React component" → `coding_specialist` → Claude Opus 4
+   - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4
+   - "Write API documentation" → `documentation_writer` → Claude Sonnet 4
    - "Generate commit message for these changes" → `commit_generator` → Claude 3.5 Haiku
-   - "Call this API endpoint" → `tool_executor` → Claude Sonnet 4 (1M context)
-   - "Solve this complex math problem" → `reasoning_engine` → Claude Opus 4 (1M context)
+   - "Call this API endpoint" → `tool_executor` → Claude Sonnet 4
+   - "Solve this complex math problem" → `reasoning_engine` → Claude Opus 4
    - "What's 2+2?" → `fast_responder` → Claude 3.5 Haiku
-   - "Analyze this mixed text and image content" → `multimodal_specialist` → Claude Sonnet 4 (1M context)
+   - "Analyze this mixed text and image content" → `multimodal_specialist` → Claude Sonnet 4
    - "Help me plan my day" → `general_assistant` → Claude 3.7 Sonnet
 
 The MLX model analyzes each query against your expert descriptions and routes to the best match - no keyword patterns or hardcoded rules needed!
@@ -535,6 +535,9 @@ OpenAI-style chat completions (automatically converted to/from Anthropic format)
 Note: The `/v1/models` endpoint is not currently implemented.
 
 ### InferSwitch Extensions
+
+#### GET /mlx/status
+Check MLX model status and test query difficulty rating.
 
 #### GET /backends/status
 Check health and capabilities of all configured backends.

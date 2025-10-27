@@ -152,10 +152,21 @@ class AnthropicBackend(BaseBackend):
             )
 
             if max_tokens > model_max:
-                logger.warning(
-                    f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
-                    f"Capping to {model_max}."
-                )
+                # Check if model routing is happening
+                is_routed = effective_model != model
+
+                if is_routed:
+                    # Model routing is expected behavior - log at DEBUG level
+                    logger.debug(
+                        f"Model routing: {model} → {effective_model}. "
+                        f"Capping max_tokens from {max_tokens} to {model_max} (lowest common denominator)."
+                    )
+                else:
+                    # User requested this specific model with too many tokens - log WARNING
+                    logger.warning(
+                        f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
+                        f"Capping to {model_max}."
+                    )
                 request_data["max_tokens"] = model_max
             else:
                 request_data["max_tokens"] = max_tokens
@@ -453,10 +464,21 @@ class AnthropicBackend(BaseBackend):
                 effective_model, MODEL_MAX_TOKENS["default"]
             )
             if max_tokens > model_max:
-                logger.warning(
-                    f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
-                    f"Capping to {model_max}."
-                )
+                # Check if model routing is happening
+                is_routed = effective_model != model
+
+                if is_routed:
+                    # Model routing is expected behavior - log at DEBUG level
+                    logger.debug(
+                        f"Model routing (streaming): {model} → {effective_model}. "
+                        f"Capping max_tokens from {max_tokens} to {model_max} (lowest common denominator)."
+                    )
+                else:
+                    # User requested this specific model with too many tokens - log WARNING
+                    logger.warning(
+                        f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
+                        f"Capping to {model_max}."
+                    )
                 request_data["max_tokens"] = model_max
             else:
                 request_data["max_tokens"] = max_tokens

@@ -202,6 +202,16 @@ class AnthropicBackend(BaseBackend):
         anthropic_version = kwargs.get("anthropic_version", "2023-06-01")
         anthropic_beta = kwargs.get("anthropic_beta")
 
+        # Filter out interleaved-thinking beta for models that don't support it
+        if effective_model in non_thinking_models and anthropic_beta:
+            # Remove interleaved-thinking from beta header
+            beta_parts = [b.strip() for b in anthropic_beta.split(",")]
+            beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
+            anthropic_beta = ",".join(beta_parts) if beta_parts else None
+            logger.debug(
+                f"Filtered out interleaved-thinking beta for model {effective_model}"
+            )
+
         # Log request
         log_request("/v1/messages", request_data, kwargs.get("difficulty_rating"))
         log_chat_template("/v1/messages", request_data)
@@ -483,6 +493,16 @@ class AnthropicBackend(BaseBackend):
         x_api_key = kwargs.get("x_api_key", self.api_key)
         anthropic_version = kwargs.get("anthropic_version", "2023-06-01")
         anthropic_beta = kwargs.get("anthropic_beta")
+
+        # Filter out interleaved-thinking beta for models that don't support it
+        if effective_model in non_thinking_models and anthropic_beta:
+            # Remove interleaved-thinking from beta header
+            beta_parts = [b.strip() for b in anthropic_beta.split(",")]
+            beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
+            anthropic_beta = ",".join(beta_parts) if beta_parts else None
+            logger.debug(
+                f"Filtered out interleaved-thinking beta for streaming model {effective_model}"
+            )
 
         # Log request
         log_request("/v1/messages", request_data, kwargs.get("difficulty_rating"))

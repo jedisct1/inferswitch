@@ -176,6 +176,7 @@ class AnthropicBackend(BaseBackend):
             "claude-3-opus-20240229",
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307",
+            "claude-haiku-4-5-20251001",
         ]
 
         # Parameters that should be filtered out for all Anthropic models
@@ -473,6 +474,7 @@ class AnthropicBackend(BaseBackend):
             "claude-3-opus-20240229",
             "claude-3-sonnet-20240229",
             "claude-3-haiku-20240307",
+            "claude-haiku-4-5-20251001",
         ]
 
         for key, value in kwargs.items():

@@ -76,6 +76,60 @@ class AnthropicBackend(BaseBackend):
 
         return headers
 
+    def _messages_compatible_with_thinking(
+        self, messages: List[Dict[str, Any]]
+    ) -> bool:
+        """
+        Check if messages are compatible with thinking mode.
+
+        When thinking mode is enabled, Anthropic requires that:
+        - A final assistant message must start with a thinking/redacted_thinking block
+
+        Returns False if messages are incompatible with thinking mode.
+        """
+        if not messages:
+            return True
+
+        # Find the LAST assistant message (if any)
+        last_assistant_idx = None
+        for i in range(len(messages) - 1, -1, -1):
+            if messages[i].get("role") == "assistant":
+                last_assistant_idx = i
+                break
+
+        # If no assistant message, compatible
+        if last_assistant_idx is None:
+            return True
+
+        # Check the last assistant message
+        msg = messages[last_assistant_idx]
+        content = msg.get("content", [])
+
+        # If content is a string, it's treated as text block (incompatible)
+        if isinstance(content, str):
+            logger.debug(
+                f"Last assistant message (pos {last_assistant_idx}) has string content, "
+                f"treated as text block (incompatible with thinking)"
+            )
+            return False
+
+        # If content is empty, compatible (edge case)
+        if not content:
+            return True
+
+        # Check if first content block is a thinking block
+        first_block = content[0] if isinstance(content, list) else None
+        if first_block and isinstance(first_block, dict):
+            block_type = first_block.get("type")
+            if block_type not in ["thinking", "redacted_thinking"]:
+                logger.debug(
+                    f"Last assistant message (pos {last_assistant_idx}) starts with '{block_type}' "
+                    f"instead of thinking block (incompatible)"
+                )
+                return False
+
+        return True
+
     async def create_message(
         self,
         messages: List[Dict[str, Any]],
@@ -103,12 +157,27 @@ class AnthropicBackend(BaseBackend):
         ]
 
         if effective_model in thinking_models:
-            # These models need the interleaved-thinking beta header
-            if not anthropic_beta:
-                anthropic_beta = "interleaved-thinking-2025-05-14"
-            elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
-                anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
-            kwargs["anthropic_beta"] = anthropic_beta
+            # Check if messages are compatible with thinking mode
+            messages_compatible = self._messages_compatible_with_thinking(messages)
+
+            if messages_compatible:
+                # These models need the interleaved-thinking beta header
+                if not anthropic_beta:
+                    anthropic_beta = "interleaved-thinking-2025-05-14"
+                elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
+                    anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
+                kwargs["anthropic_beta"] = anthropic_beta
+            else:
+                logger.warning(
+                    f"Messages incompatible with thinking mode for {effective_model}. "
+                    f"Will filter out thinking beta to avoid API errors."
+                )
+                # Don't add thinking beta, and filter it out if present
+                if anthropic_beta and "interleaved-thinking" in anthropic_beta:
+                    beta_parts = [b.strip() for b in anthropic_beta.split(",")]
+                    beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
+                    anthropic_beta = ",".join(beta_parts) if beta_parts else None
+                    kwargs["anthropic_beta"] = anthropic_beta
 
         # Build request data
         request_data = {
@@ -421,11 +490,26 @@ class AnthropicBackend(BaseBackend):
         ]
 
         if effective_model in thinking_models:
-            if not anthropic_beta:
-                anthropic_beta = "interleaved-thinking-2025-05-14"
-            elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
-                anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
-            kwargs["anthropic_beta"] = anthropic_beta
+            # Check if messages are compatible with thinking mode
+            messages_compatible = self._messages_compatible_with_thinking(messages)
+
+            if messages_compatible:
+                if not anthropic_beta:
+                    anthropic_beta = "interleaved-thinking-2025-05-14"
+                elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
+                    anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
+                kwargs["anthropic_beta"] = anthropic_beta
+            else:
+                logger.warning(
+                    f"Streaming messages incompatible with thinking mode for {effective_model}. "
+                    f"Will filter out thinking beta to avoid API errors."
+                )
+                # Don't add thinking beta, and filter it out if present
+                if anthropic_beta and "interleaved-thinking" in anthropic_beta:
+                    beta_parts = [b.strip() for b in anthropic_beta.split(",")]
+                    beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
+                    anthropic_beta = ",".join(beta_parts) if beta_parts else None
+                    kwargs["anthropic_beta"] = anthropic_beta
 
         # Build request data with streaming enabled
         request_data = {

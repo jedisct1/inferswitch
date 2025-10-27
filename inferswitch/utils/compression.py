@@ -14,6 +14,11 @@ from enum import Enum
 from ..config import MODEL_CONTEXT_SIZES
 from ..mlx_model import mlx_model_manager
 from .chat_template import truncate_chat_template_to_fit
+from .tool_validation import (
+    validate_tool_pairs,
+    remove_orphaned_tool_results,
+    filter_messages_preserving_tool_pairs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +133,13 @@ class MessageCompressor:
             )
             strategy = CompressionStrategy.TRUNCATE
 
+        # Validate and fix tool_use/tool_result pairs
+        if not validate_tool_pairs(compressed_messages):
+            logger.warning(
+                "Compressed messages have invalid tool_use/tool_result pairs. Cleaning up..."
+            )
+            compressed_messages = remove_orphaned_tool_results(compressed_messages)
+
         # Calculate final size
         compressed_tokens = self._estimate_tokens(compressed_messages)
         compressed_count = len(compressed_messages)
@@ -233,7 +245,12 @@ class MessageCompressor:
 
             # Sort back to original order
             kept_messages.sort(key=lambda x: x[0])
-            result_messages = [msg for _, msg in kept_messages]
+            kept_indices = {idx for idx, _ in kept_messages}
+
+            # Use filter_messages_preserving_tool_pairs to ensure tool pairs are kept
+            result_messages = filter_messages_preserving_tool_pairs(
+                messages, kept_indices
+            )
 
             # Create notice
             removed_count = len(messages) - len(result_messages)

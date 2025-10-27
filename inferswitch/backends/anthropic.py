@@ -11,6 +11,7 @@ from .base import BaseBackend, BackendConfig, BackendResponse
 from .errors import BackendError, convert_backend_error, ContextWindowExceededError
 from ..utils.logging import log_request, log_chat_template
 from ..utils import get_logger, estimate_tokens_fallback
+from ..utils.tool_validation import validate_tool_pairs, remove_orphaned_tool_results
 from ..config import LOG_FILE, MODEL_MAX_TOKENS
 from ..utils.oauth import oauth_manager
 
@@ -170,8 +171,26 @@ class AnthropicBackend(BaseBackend):
             else:
                 logger.warning(
                     f"Messages incompatible with thinking mode for {effective_model}. "
-                    f"Will filter out thinking beta to avoid API errors."
+                    f"Removing incompatible final assistant message to avoid API errors."
                 )
+                # Find and remove the last assistant message
+                last_assistant_idx = None
+                for i in range(len(messages) - 1, -1, -1):
+                    if messages[i].get("role") == "assistant":
+                        last_assistant_idx = i
+                        break
+
+                if last_assistant_idx is not None:
+                    removed_msg = messages.pop(last_assistant_idx)
+                    logger.debug(f"Removed incompatible assistant message at index {last_assistant_idx}")
+
+                    # Validate tool pairs after removal
+                    if not validate_tool_pairs(messages):
+                        logger.warning(
+                            "Removing assistant message broke tool_use/tool_result pairs. Cleaning up..."
+                        )
+                        messages[:] = remove_orphaned_tool_results(messages)
+
                 # Don't add thinking beta, and filter it out if present
                 if anthropic_beta and "interleaved-thinking" in anthropic_beta:
                     beta_parts = [b.strip() for b in anthropic_beta.split(",")]
@@ -220,6 +239,35 @@ class AnthropicBackend(BaseBackend):
                 effective_model, MODEL_MAX_TOKENS["default"]
             )
 
+            # Check if thinking budget is specified
+            thinking_budget = None
+            if "thinking" in kwargs and isinstance(kwargs["thinking"], dict):
+                thinking_budget = kwargs["thinking"].get("budget_tokens")
+
+            # Determine the actual max_tokens to use
+            capped_max_tokens = min(max_tokens, model_max)
+
+            # If thinking budget exists, ensure max_tokens > budget_tokens
+            if thinking_budget is not None:
+                if capped_max_tokens <= thinking_budget:
+                    # Need to ensure max_tokens > budget_tokens
+                    required_max_tokens = thinking_budget + 1
+                    if required_max_tokens <= model_max:
+                        logger.warning(
+                            f"Adjusting max_tokens from {capped_max_tokens} to {required_max_tokens} "
+                            f"to satisfy thinking.budget_tokens requirement ({thinking_budget})"
+                        )
+                        capped_max_tokens = required_max_tokens
+                    else:
+                        # Model's max_tokens can't accommodate the thinking budget
+                        logger.warning(
+                            f"thinking.budget_tokens ({thinking_budget}) is too large for {effective_model} "
+                            f"(max_tokens limit: {model_max}). Reducing budget_tokens to {model_max - 1000}."
+                        )
+                        # Reduce the thinking budget to fit
+                        kwargs["thinking"]["budget_tokens"] = model_max - 1000
+                        capped_max_tokens = model_max
+
             if max_tokens > model_max:
                 # Check if model routing is happening
                 is_routed = effective_model != model
@@ -228,17 +276,17 @@ class AnthropicBackend(BaseBackend):
                     # Model routing is expected behavior - log at DEBUG level
                     logger.debug(
                         f"Model routing: {model} → {effective_model}. "
-                        f"Capping max_tokens from {max_tokens} to {model_max} (lowest common denominator)."
+                        f"Capping max_tokens from {max_tokens} to {capped_max_tokens} (lowest common denominator)."
                     )
                 else:
                     # User requested this specific model with too many tokens - log WARNING
                     logger.warning(
                         f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
-                        f"Capping to {model_max}."
+                        f"Capping to {capped_max_tokens}."
                     )
-                request_data["max_tokens"] = model_max
-            else:
-                request_data["max_tokens"] = max_tokens
+            request_data["max_tokens"] = capped_max_tokens
+        elif max_tokens is not None:
+            request_data["max_tokens"] = max_tokens
 
         if temperature is not None:
             request_data["temperature"] = temperature
@@ -502,8 +550,26 @@ class AnthropicBackend(BaseBackend):
             else:
                 logger.warning(
                     f"Streaming messages incompatible with thinking mode for {effective_model}. "
-                    f"Will filter out thinking beta to avoid API errors."
+                    f"Removing incompatible final assistant message to avoid API errors."
                 )
+                # Find and remove the last assistant message
+                last_assistant_idx = None
+                for i in range(len(messages) - 1, -1, -1):
+                    if messages[i].get("role") == "assistant":
+                        last_assistant_idx = i
+                        break
+
+                if last_assistant_idx is not None:
+                    removed_msg = messages.pop(last_assistant_idx)
+                    logger.debug(f"Removed incompatible assistant message at index {last_assistant_idx} (streaming)")
+
+                    # Validate tool pairs after removal
+                    if not validate_tool_pairs(messages):
+                        logger.warning(
+                            "Removing assistant message (streaming) broke tool_use/tool_result pairs. Cleaning up..."
+                        )
+                        messages[:] = remove_orphaned_tool_results(messages)
+
                 # Don't add thinking beta, and filter it out if present
                 if anthropic_beta and "interleaved-thinking" in anthropic_beta:
                     beta_parts = [b.strip() for b in anthropic_beta.split(",")]
@@ -547,6 +613,36 @@ class AnthropicBackend(BaseBackend):
             model_max = MODEL_MAX_TOKENS.get(
                 effective_model, MODEL_MAX_TOKENS["default"]
             )
+
+            # Check if thinking budget is specified
+            thinking_budget = None
+            if "thinking" in kwargs and isinstance(kwargs["thinking"], dict):
+                thinking_budget = kwargs["thinking"].get("budget_tokens")
+
+            # Determine the actual max_tokens to use
+            capped_max_tokens = min(max_tokens, model_max)
+
+            # If thinking budget exists, ensure max_tokens > budget_tokens
+            if thinking_budget is not None:
+                if capped_max_tokens <= thinking_budget:
+                    # Need to ensure max_tokens > budget_tokens
+                    required_max_tokens = thinking_budget + 1
+                    if required_max_tokens <= model_max:
+                        logger.warning(
+                            f"Streaming: Adjusting max_tokens from {capped_max_tokens} to {required_max_tokens} "
+                            f"to satisfy thinking.budget_tokens requirement ({thinking_budget})"
+                        )
+                        capped_max_tokens = required_max_tokens
+                    else:
+                        # Model's max_tokens can't accommodate the thinking budget
+                        logger.warning(
+                            f"Streaming: thinking.budget_tokens ({thinking_budget}) is too large for {effective_model} "
+                            f"(max_tokens limit: {model_max}). Reducing budget_tokens to {model_max - 1000}."
+                        )
+                        # Reduce the thinking budget to fit
+                        kwargs["thinking"]["budget_tokens"] = model_max - 1000
+                        capped_max_tokens = model_max
+
             if max_tokens > model_max:
                 # Check if model routing is happening
                 is_routed = effective_model != model
@@ -555,17 +651,17 @@ class AnthropicBackend(BaseBackend):
                     # Model routing is expected behavior - log at DEBUG level
                     logger.debug(
                         f"Model routing (streaming): {model} → {effective_model}. "
-                        f"Capping max_tokens from {max_tokens} to {model_max} (lowest common denominator)."
+                        f"Capping max_tokens from {max_tokens} to {capped_max_tokens} (lowest common denominator)."
                     )
                 else:
                     # User requested this specific model with too many tokens - log WARNING
                     logger.warning(
                         f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
-                        f"Capping to {model_max}."
+                        f"Capping to {capped_max_tokens}."
                     )
-                request_data["max_tokens"] = model_max
-            else:
-                request_data["max_tokens"] = max_tokens
+            request_data["max_tokens"] = capped_max_tokens
+        elif max_tokens is not None:
+            request_data["max_tokens"] = max_tokens
 
         if temperature is not None:
             request_data["temperature"] = temperature

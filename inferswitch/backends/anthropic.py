@@ -204,13 +204,14 @@ class AnthropicBackend(BaseBackend):
         anthropic_beta = kwargs.get("anthropic_beta")
 
         # Filter out interleaved-thinking beta for models that don't support it
-        if effective_model in non_thinking_models and anthropic_beta:
+        # Only allow thinking beta for models explicitly in thinking_models list
+        if effective_model not in thinking_models and anthropic_beta:
             # Remove interleaved-thinking from beta header
             beta_parts = [b.strip() for b in anthropic_beta.split(",")]
             beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
             anthropic_beta = ",".join(beta_parts) if beta_parts else None
             logger.debug(
-                f"Filtered out interleaved-thinking beta for model {effective_model}"
+                f"Filtered out interleaved-thinking beta for model {effective_model} (not in thinking_models)"
             )
 
         # Log request
@@ -497,13 +498,14 @@ class AnthropicBackend(BaseBackend):
         anthropic_beta = kwargs.get("anthropic_beta")
 
         # Filter out interleaved-thinking beta for models that don't support it
-        if effective_model in non_thinking_models and anthropic_beta:
+        # Only allow thinking beta for models explicitly in thinking_models list
+        if effective_model not in thinking_models and anthropic_beta:
             # Remove interleaved-thinking from beta header
             beta_parts = [b.strip() for b in anthropic_beta.split(",")]
             beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
             anthropic_beta = ",".join(beta_parts) if beta_parts else None
             logger.debug(
-                f"Filtered out interleaved-thinking beta for streaming model {effective_model}"
+                f"Filtered out interleaved-thinking beta for streaming model {effective_model} (not in thinking_models)"
             )
 
         # Log request

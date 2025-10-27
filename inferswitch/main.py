@@ -145,9 +145,15 @@ async def messages_endpoint(request: Request, registry=Depends(get_backend_regis
     """Main messages endpoint with multi-backend support."""
     # Import here to avoid circular imports
     from .models import MessagesRequest
+    from .utils import get_default_max_tokens
 
     # Parse request body
     body = await request.json()
+
+    # Set smart default max_tokens if not provided
+    if "max_tokens" not in body or body["max_tokens"] is None:
+        body["max_tokens"] = get_default_max_tokens(body.get("model", "claude-3-5-sonnet-20241022"))
+
     messages_request = MessagesRequest(**body)
 
     # Get headers
@@ -221,12 +227,18 @@ async def chat_completions_endpoint(
 
     # Build Anthropic-style request
     from .models import MessagesRequest
+    from .utils import get_default_max_tokens
+
+    # Use smart default for max_tokens if not provided
+    max_tokens = body.get("max_tokens")
+    if max_tokens is None:
+        max_tokens = get_default_max_tokens(model)
 
     anthropic_request = MessagesRequest(
         model=model,
         messages=anthropic_messages,
         system=system_content,
-        max_tokens=body.get("max_tokens", 1024),
+        max_tokens=max_tokens,
         temperature=body.get("temperature"),
         stream=body.get("stream", False),
     )

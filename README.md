@@ -14,19 +14,19 @@ InferSwitch is an API gateway that seamlessly routes requests between multiple L
 
 ### Key Features
 
-🚀 **Multi-Provider Support** - Route between Anthropic Claude (including Claude 4 models), OpenAI GPT, OpenRouter models, local LM-Studio models, and any OpenAI-compatible endpoints
+Multi-Provider Support - Route between Anthropic Claude (including Claude 4 models), OpenAI GPT, OpenRouter models, local LM-Studio models, and any OpenAI-compatible endpoints
 
-🧠 **Custom Expert Routing** - Define your own AI experts with custom descriptions and let MLX route queries to the most appropriate specialist - no hardcoded patterns needed
+Custom Expert Routing - Define your own AI experts with custom descriptions and let MLX route queries to the most appropriate specialist - no hardcoded patterns needed
 
-🎯 **MLX-Powered Classification** - Local AI models (default: `jedisct1/arch-router-1.5b`, optimized for routing) analyze queries to match them with your custom expert definitions using pure AI classification
+MLX-Powered Classification - Local AI models (default: `jedisct1/arch-router-1.5b`, optimized for routing) analyze queries to match them with your custom expert definitions using pure AI classification
 
-💾 **Smart Caching** - Reduce costs and latency with smart response caching that ignores irrelevant metadata
+Smart Caching - Reduce costs and latency with smart response caching that ignores irrelevant metadata
 
-🔄 **Model Overrides** - Transparently replace expensive models with cheaper alternatives for development and testing
+Model Overrides - Transparently replace expensive models with cheaper alternatives for development and testing
 
-🔐 **OAuth Support** - Use your Claude.ai account instead of managing API keys
+OAuth Support - Use your Claude.ai account instead of managing API keys
 
-🗜️ **Intelligent Context Compression** - Automatically compress requests that exceed model context windows using MLX-powered intelligence
+Intelligent Context Compression - Automatically compress requests that exceed model context windows using MLX-powered intelligence
 
 ## Table of Contents
 
@@ -95,24 +95,24 @@ inferswitch
 
 ### 5-Minute Setup
 
-1. **Clone and install**:
+1. Clone and install:
 ```bash
 git clone https://github.com/jedisct1/inferswitch.git
 cd inferswitch
 uv sync
 ```
 
-2. **Set your API key**:
+2. Set your API key:
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-your-key-here"
 ```
 
-3. **Start InferSwitch**:
+3. Start InferSwitch:
 ```bash
 uv run python main.py
 ```
 
-4. **Test it works**:
+4. Test it works:
 ```bash
 curl -X POST http://localhost:1235/v1/messages \
   -H "Content-Type: application/json" \
@@ -125,7 +125,7 @@ curl -X POST http://localhost:1235/v1/messages \
   }'
 ```
 
-You should see Claude respond normally. **That's it!** InferSwitch is now running and ready to route your requests.
+You should see Claude respond normally. That's it! InferSwitch is now running and ready to route your requests.
 
 ### Advanced Quick Start Examples
 
@@ -194,26 +194,26 @@ curl -X POST http://localhost:1235/v1/messages \
 
 InferSwitch can be used with AI coding agents like [Roo Code](https://roocode.ai) to provide intelligent model routing for coding tasks. To configure your coding agent:
 
-1. **Select "Anthropic" as the LLM provider** in your coding agent's settings
-2. **Set the custom base URL** to `http://127.0.0.1:1235` (or whatever host/port you configured InferSwitch to use)
+1. Select "Anthropic" as the LLM provider in your coding agent's settings
+2. Set the custom base URL to `http://127.0.0.1:1235` (or whatever host/port you configured InferSwitch to use)
 
 This setup allows the coding agent to leverage InferSwitch's routing capabilities, automatically selecting the most appropriate model based on the complexity and type of coding task while maintaining compatibility with Anthropic's API format.
 
-**Benefits for coding agents:**
-- **Automatic model selection** based on task complexity (simple queries → fast models, complex coding → powerful models)
-- **Cost optimization** by routing routine tasks to cheaper models
-- **Fallback protection** if your primary model is unavailable
-- **Local model support** for offline development or privacy-sensitive projects
+Benefits for coding agents:
+- Automatic model selection based on task complexity (simple queries → fast models, complex coding → powerful models)
+- Cost optimization by routing routine tasks to cheaper models
+- Fallback protection if your primary model is unavailable
+- Local model support for offline development or privacy-sensitive projects
 
 ### Using Local Models with LM-Studio
 
-1. **Start LM-Studio** and load a model
-2. **Start InferSwitch** with LM-Studio backend:
+1. Start LM-Studio and load a model
+2. Start InferSwitch with LM-Studio backend:
 ```bash
 INFERSWITCH_BACKEND=lm-studio uv run python main.py
 ```
 
-3. **All requests now route to your local model**:
+3. All requests now route to your local model:
 ```bash
 # Same API call, but now uses your local model!
 curl -X POST http://localhost:1235/v1/messages \
@@ -227,13 +227,13 @@ curl -X POST http://localhost:1235/v1/messages \
 
 ### Using OpenRouter Models
 
-1. **Get an OpenRouter API key** from [openrouter.ai](https://openrouter.ai)
-2. **Start InferSwitch** with OpenRouter backend:
+1. Get an OpenRouter API key from [openrouter.ai](https://openrouter.ai)
+2. Start InferSwitch with OpenRouter backend:
 ```bash
 OPENROUTER_API_KEY=your_key INFERSWITCH_BACKEND=openrouter uv run python main.py
 ```
 
-3. **Access hundreds of models** through OpenRouter:
+3. Access hundreds of models through OpenRouter:
 ```bash
 # Use any OpenRouter model
 curl -X POST http://localhost:1235/v1/messages \
@@ -251,15 +251,15 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
 
 ### Why Custom Experts?
 
-- **No Hardcoded Patterns**: MLX models understand context and meaning, not just keywords
-- **Domain-Specific Routing**: Create experts for any field - medical, legal, technical, creative
-- **Flexible Definitions**: Define experts with natural language descriptions
-- **Smart Matching**: Queries are matched based on semantic similarity to expert descriptions
-- **Multi-Backend Support**: Route different experts to different model providers
+- No Hardcoded Patterns: MLX models understand context and meaning, not just keywords
+- Domain-Specific Routing: Create experts for any field - medical, legal, technical, creative
+- Flexible Definitions: Define experts with natural language descriptions
+- Smart Matching: Queries are matched based on semantic similarity to expert descriptions
+- Multi-Backend Support: Route different experts to different model providers
 
 ### Expert Setup Example
 
-1. **Create `inferswitch.config.json`** with your expert definitions:
+1. Create `inferswitch.config.json` with your expert definitions:
 ```json
 {
   "force_expert_routing": true,
@@ -336,7 +336,7 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
 }
 ```
 
-2. **Start InferSwitch** - it automatically routes using MLX classification:
+2. Start InferSwitch - it automatically routes using MLX classification:
    - "Debug this React component" → `coding_specialist` → Claude Opus 4 (1M context)
    - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4 (1M context)
    - "Write API documentation" → `documentation_writer` → Claude Sonnet 4 (1M context)
@@ -357,10 +357,10 @@ See the [Custom Expert Documentation](docs/custom_experts.md) for detailed confi
 
 InferSwitch can be configured through (in order of precedence):
 
-1. **Request headers** - Per-request overrides
-2. **Environment variables** - Runtime configuration
-3. **Configuration file** - `inferswitch.config.json` in working directory
-4. **Default values** - Built-in defaults
+1. Request headers - Per-request overrides
+2. Environment variables - Runtime configuration
+3. Configuration file - `inferswitch.config.json` in working directory
+4. Default values - Built-in defaults
 
 ### Configuration File Structure
 
@@ -423,26 +423,26 @@ Create `inferswitch.config.json` in your working directory for advanced configur
 
 InferSwitch selects backends using this priority order:
 
-1. **Explicit Header** - `x-backend: lm-studio` in request
-2. **Environment Override** - `INFERSWITCH_BACKEND=lm-studio`
-3. **Expert Routing** - Based on custom expert classification (if configured)
-4. **Model Mapping** - Direct model → backend mapping
-5. **Fallback** - Configured fallback or default to anthropic
+1. Explicit Header - `x-backend: lm-studio` in request
+2. Environment Override - `INFERSWITCH_BACKEND=lm-studio`
+3. Expert Routing - Based on custom expert classification (if configured)
+4. Model Mapping - Direct model → backend mapping
+5. Fallback - Configured fallback or default to anthropic
 
 ### Custom Expert-Based Routing
 
 InferSwitch uses MLX models to classify queries and route them to your custom-defined experts:
 
-- **Capability-Based Experts**: Define experts based on actual AI model capabilities
+- Capability-Based Experts: Define experts based on actual AI model capabilities
   - Examples: "coding_specialist", "vision_analyst", "reasoning_engine", "fast_responder"
   - MLX analyzes queries against model capabilities to find the best match
 
-- **No Hardcoded Patterns**: Pure AI-based classification without keyword matching
+- No Hardcoded Patterns: Pure AI-based classification without keyword matching
   - Query: "Debug this memory leak in Python" → Expert: "coding_specialist"
   - Query: "Analyze this screenshot" → Expert: "vision_analyst"
   - Query: "Solve this complex equation" → Expert: "reasoning_engine"
 
-- **Optimized Model Assignment**: Route each expert to models with matching capabilities
+- Optimized Model Assignment: Route each expert to models with matching capabilities
   - Coding tasks → Code-optimized models (Sonnet, Qwen Coder, OpenHands)
   - Vision tasks → Multimodal models (Claude Sonnet, GPT-4 Vision)
   - Simple tasks → Fast, lightweight models (Haiku, small local models)
@@ -463,12 +463,12 @@ INFERSWITCH_DEFAULT_MODEL="llama-3.1-8b" uv run python main.py
 
 InferSwitch automatically compresses requests that exceed model context windows using MLX-powered intelligence:
 
-- **Automatic Detection**: Detects context window errors from all backends
-- **MLX-Powered Scoring**: Uses MLX models to score message importance
-- **Multiple Strategies**: Truncation, summarization, hybrid compression
-- **Quality Preservation**: Maintains conversation coherence during compression
-- **Transparent**: Adds compression notices to inform LLM agents
-- **Progressive**: More aggressive compression on retry attempts
+- Automatic Detection: Detects context window errors from all backends
+- MLX-Powered Scoring: Uses MLX models to score message importance
+- Multiple Strategies: Truncation, summarization, hybrid compression
+- Quality Preservation: Maintains conversation coherence during compression
+- Transparent: Adds compression notices to inform LLM agents
+- Progressive: More aggressive compression on retry attempts
 
 Configuration:
 ```json
@@ -499,10 +499,10 @@ InferSwitch provides automatic fallback when models fail due to rate limits or i
 ```
 
 Features:
-- **Automatic Retry**: When a model fails, the next model in the list is tried
-- **Temporary Disabling**: Failed models are disabled for a configurable duration
-- **Self-Healing**: Models automatically re-enable after the cooldown period
-- **Smart Detection**: Recognizes rate limits (429) and credit errors (402)
+- Automatic Retry: When a model fails, the next model in the list is tried
+- Temporary Disabling: Failed models are disabled for a configurable duration
+- Self-Healing: Models automatically re-enable after the cooldown period
+- Smart Detection: Recognizes rate limits (429) and credit errors (402)
 
 ## API Reference
 
@@ -532,7 +532,7 @@ Count tokens in messages without making a completion request.
 #### POST /v1/chat/completions
 OpenAI-style chat completions (automatically converted to/from Anthropic format).
 
-**Note:** The `/v1/models` endpoint is not currently implemented.
+Note: The `/v1/models` endpoint is not currently implemented.
 
 ### InferSwitch Extensions
 
@@ -571,7 +571,7 @@ Clear stored OAuth tokens.
 
 Use your Claude.ai account instead of API keys:
 
-1. **Configure OAuth** in `inferswitch.config.json`:
+1. Configure OAuth in `inferswitch.config.json`:
 ```json
 {
   "providers_auth": {
@@ -584,13 +584,13 @@ Use your Claude.ai account instead of API keys:
 }
 ```
 
-2. **Start InferSwitch** - it will prompt for authentication:
+2. Start InferSwitch - it will prompt for authentication:
 ```bash
 uv run python main.py
 # Follow the prompts to authenticate via Claude.ai
 ```
 
-3. **Use without API keys**:
+3. Use without API keys:
 ```bash
 # No x-api-key header needed!
 curl -X POST http://localhost:1235/v1/messages \
@@ -620,16 +620,16 @@ Add any OpenAI-compatible endpoint:
 
 ### Performance Optimization
 
-1. **Enable caching** for repeated queries:
+1. Enable caching for repeated queries:
 ```bash
 CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python main.py
 ```
 
-2. **Use expert routing** to minimize costs:
+2. Use expert routing to minimize costs:
    - Configure local models for simple queries via general assistant experts
    - Reserve expensive models for specialized expert tasks
 
-3. **Monitor performance**:
+3. Monitor performance:
 ```bash
 # Check cache hit rate
 curl http://localhost:1235/cache/stats
@@ -656,10 +656,10 @@ InferSwitch provides built-in monitoring and performance metrics. Example cache 
 
 ### Cost Optimization
 
-1. **Use expert routing** to route simple queries to cheaper models
-2. **Enable caching** to avoid repeated API calls
-3. **Configure model fallbacks** to use cheaper models when expensive ones fail
-4. **Monitor cache hit rates** to ensure effective caching
+1. Use expert routing to route simple queries to cheaper models
+2. Enable caching to avoid repeated API calls
+3. Configure model fallbacks to use cheaper models when expensive ones fail
+4. Monitor cache hit rates to ensure effective caching
 
 ```bash
 # Example cost-optimized configuration
@@ -691,9 +691,9 @@ CACHE_ENABLED=true CACHE_TTL_SECONDS=7200 uv run python main.py
 
 #### 1. Server Won't Start
 
-**Problem**: InferSwitch fails to start with port binding errors.
+Problem: InferSwitch fails to start with port binding errors.
 
-**Solution**:
+Solution:
 ```bash
 # Check if port 1235 is already in use
 lsof -i :1235
@@ -704,9 +704,9 @@ INFERSWITCH_PORT=1236 uv run python main.py
 
 #### 2. Authentication Errors
 
-**Problem**: `401 Unauthorized` or `403 Forbidden` errors.
+Problem: `401 Unauthorized` or `403 Forbidden` errors.
 
-**Solutions**:
+Solutions:
 ```bash
 # Check if API key is set correctly
 echo $ANTHROPIC_API_KEY
@@ -720,9 +720,9 @@ curl http://localhost:1235/oauth/status
 
 #### 3. Model Not Found Errors
 
-**Problem**: Model routing fails with "model not found" errors.
+Problem: Model routing fails with "model not found" errors.
 
-**Solution**:
+Solution:
 ```bash
 # Check backend status
 curl http://localhost:1235/backends/status
@@ -736,9 +736,9 @@ curl -H "x-backend: anthropic" http://localhost:1235/v1/messages
 
 #### 4. MLX Installation Issues (Apple Silicon)
 
-**Problem**: MLX models fail to load on Apple Silicon.
+Problem: MLX models fail to load on Apple Silicon.
 
-**Solution**:
+Solution:
 ```bash
 # Install MLX explicitly
 pip install mlx mlx-lm
@@ -749,9 +749,9 @@ python -c "from inferswitch.mlx_model import mlx_model_manager; print(mlx_model_
 
 #### 5. LM-Studio Connection Issues
 
-**Problem**: Cannot connect to LM-Studio backend.
+Problem: Cannot connect to LM-Studio backend.
 
-**Solution**:
+Solution:
 ```bash
 # Check LM-Studio is running and accessible
 curl http://127.0.0.1:1234/v1/models
@@ -766,9 +766,9 @@ curl http://127.0.0.1:1234/v1/chat/completions \
 
 #### 6. High Memory Usage
 
-**Problem**: InferSwitch consumes excessive memory.
+Problem: InferSwitch consumes excessive memory.
 
-**Solution**:
+Solution:
 ```bash
 # Reduce cache size
 CACHE_MAX_SIZE=100 uv run python main.py
@@ -782,9 +782,9 @@ INFERSWITCH_MLX_MODEL="mlx-community/Qwen2.5-3B-8bit" uv run python main.py
 
 #### 7. Slow Response Times
 
-**Problem**: API responses are slower than expected.
+Problem: API responses are slower than expected.
 
-**Solution**:
+Solution:
 ```bash
 # Enable cache for repeated queries
 CACHE_ENABLED=true uv run python main.py
@@ -798,9 +798,9 @@ curl -w "@curl-format.txt" http://localhost:1235/backends/status
 
 #### 8. Configuration Not Loading
 
-**Problem**: Configuration file changes aren't applied.
+Problem: Configuration file changes aren't applied.
 
-**Solution**:
+Solution:
 ```bash
 # Verify config file location
 ls -la inferswitch.config.json
@@ -816,10 +816,10 @@ python -m json.tool inferswitch.config.json
 
 If you encounter issues not covered here:
 
-1. **Check the logs**: Enable debug logging with `LOG_LEVEL=DEBUG`
-2. **Verify your setup**: Use the example configurations in `examples/`
-3. **Test individual components**: Run specific tests from the `tests/` directory
-4. **Report bugs**: Create an issue on the GitHub repository
+1. Check the logs: Enable debug logging with `LOG_LEVEL=DEBUG`
+2. Verify your setup: Use the example configurations in `examples/`
+3. Test individual components: Run specific tests from the `tests/` directory
+4. Report bugs: Create an issue on the GitHub repository
 
 ### Debug Commands
 
@@ -905,67 +905,67 @@ InferSwitch uses a modular, extensible architecture built on FastAPI:
 
 ### Key Components
 
-1. **Request Processing**:
+1. Request Processing:
    - FastAPI handles HTTP requests and validation
    - Request logging and response caching
    - Streaming and non-streaming response support
 
-2. **Routing**:
+2. Routing:
    - MLX-powered expert classification
    - Custom expert definitions with natural language
    - Fallback chains for high availability
 
-3. **Backend Abstraction**:
+3. Backend Abstraction:
    - Unified interface for all LLM providers
    - Automatic format conversion (OpenAI ↔ Anthropic)
    - Health monitoring and error handling
 
-4. **Configuration Management**:
+4. Configuration Management:
    - JSON-based configuration files
    - Environment variable overrides
    - Runtime configuration validation
 
 ### Request Flow
 
-1. **Client Request**: HTTP request arrives at FastAPI endpoint
-2. **Authentication**: API key validation or OAuth token verification
-3. **Cache Check**: Look for cached responses (ignoring timestamps)
-4. **Expert Classification**: MLX model analyzes query content
-5. **Backend Selection**: Route to appropriate backend based on expert/model mapping
-6. **Format Conversion**: Convert between API formats if needed
-7. **Response Processing**: Handle streaming/non-streaming responses
-8. **Caching & Logging**: Store response and log request details
+1. Client Request: HTTP request arrives at FastAPI endpoint
+2. Authentication: API key validation or OAuth token verification
+3. Cache Check: Look for cached responses (ignoring timestamps)
+4. Expert Classification: MLX model analyzes query content
+5. Backend Selection: Route to appropriate backend based on expert/model mapping
+6. Format Conversion: Convert between API formats if needed
+7. Response Processing: Handle streaming/non-streaming responses
+8. Caching & Logging: Store response and log request details
 
 ### Extensibility
 
-- **Add New Backends**: Implement `BaseBackend` interface
-- **Custom Experts**: Define domain-specific routing logic
-- **Plugin System**: Extend functionality through the backend registry
-- **Monitoring**: Built-in metrics and health checks
+- Add New Backends: Implement `BaseBackend` interface
+- Custom Experts: Define domain-specific routing logic
+- Plugin System: Extend functionality through the backend registry
+- Monitoring: Built-in metrics and health checks
 
 ## Use Cases
 
 ### Development & Testing
-- **Local Development**: Use local models via LM-Studio for development
-- **A/B Testing**: Compare different models for the same queries
-- **Cost Control**: Route expensive queries to cheaper models during development
+- Local Development: Use local models via LM-Studio for development
+- A/B Testing: Compare different models for the same queries
+- Cost Control: Route expensive queries to cheaper models during development
 
 ### Production Deployment
-- **High Availability**: Automatic failover between multiple providers
-- **Cost Optimization**: Route simple queries to cheaper models
-- **Performance**: Cache responses to reduce latency and costs
+- High Availability: Automatic failover between multiple providers
+- Cost Optimization: Route simple queries to cheaper models
+- Performance: Cache responses to reduce latency and costs
 
 ### Specialized Applications
-- **Domain Experts**: Create expert models for specific use cases (legal, medical, technical)
-- **Multi-Modal**: Route vision tasks to vision-capable models
-- **Compliance**: Use specific models for regulatory requirements
+- Domain Experts: Create expert models for specific use cases (legal, medical, technical)
+- Multi-Modal: Route vision tasks to vision-capable models
+- Compliance: Use specific models for regulatory requirements
 
 ## Community
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/jedisct1/inferswitch/issues)
-- 💡 **Feature Requests**: [GitHub Discussions](https://github.com/jedisct1/inferswitch/discussions)
-- 📚 **Documentation**: [docs/](docs/) directory
-- 🤝 **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
+- Bug Reports: [GitHub Issues](https://github.com/jedisct1/inferswitch/issues)
+- Feature Requests: [GitHub Discussions](https://github.com/jedisct1/inferswitch/discussions)
+- Documentation: [docs/](docs/) directory
+- Contributing: See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 

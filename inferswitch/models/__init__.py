@@ -54,7 +54,7 @@ class MessagesRequest(BaseModel):
 
     model: str
     messages: List[Message]
-    max_tokens: int
+    max_tokens: Optional[int] = None
     system: Optional[Union[str, List[Dict[str, Any]]]] = None
     temperature: Optional[float] = Field(None, ge=0.0, le=1.0)
     tools: Optional[List[Dict[str, Any]]] = None

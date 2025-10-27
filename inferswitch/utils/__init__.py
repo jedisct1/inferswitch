@@ -9,7 +9,7 @@ from .chat_template import (
     truncate_chat_template_to_fit,
     remove_oldest_message_pair,
 )
-from .helpers import estimate_tokens
+from .helpers import estimate_tokens, get_default_max_tokens
 from .streaming import generate_sse_events
 from .cache import get_cache
 from .common import (
@@ -41,6 +41,7 @@ __all__ = [
     "truncate_chat_template_to_fit",
     "remove_oldest_message_pair",
     "estimate_tokens",
+    "get_default_max_tokens",
     "generate_sse_events",
     "get_cache",
     "get_logger",

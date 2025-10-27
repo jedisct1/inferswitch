@@ -26,14 +26,15 @@ def validate_required_headers(
     Validate required headers for API requests.
 
     Args:
-        x_api_key: API key header
+        x_api_key: API key header (optional when OAuth is configured)
         anthropic_version: Anthropic version header
 
     Raises:
         HTTPException: If required headers are missing
     """
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="Missing x-api-key header")
+    # Note: x-api-key is optional when OAuth is configured
+    # The actual authentication will be handled by the backend
+    # which will use OAuth if no API key is provided
 
     if not anthropic_version:
         raise HTTPException(status_code=400, detail="Missing anthropic-version header")

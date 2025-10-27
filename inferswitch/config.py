@@ -65,7 +65,7 @@ MODEL_MAX_TOKENS = {
     "claude-3-haiku-20240307": 4096,
     # Claude 3.5
     "claude-3-5-sonnet-20241022": 8192,
-    "claude-3-5-haiku-20241022": 4096,
+    "claude-3-5-haiku-20241022": 8192,
     # Claude 4 (these models support higher limits)
     "claude-haiku-4-5-20251001": 16384,
     "claude-opus-4-20250514": 32000,

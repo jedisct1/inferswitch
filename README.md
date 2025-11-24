@@ -305,6 +305,7 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
       "qwen/qwen3-1.7b"
     ],
     "reasoning_engine": [
+      "claude-opus-4-5",
       "claude-sonnet-4-5",
       "claude-opus-4-1-20250805"
     ],
@@ -335,6 +336,7 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
     "claude-3-7-sonnet-20250219": "anthropic",
     "claude-haiku-4-5-20251001": "anthropic",
     "claude-sonnet-4-5": "anthropic",
+    "claude-opus-4-5": "anthropic",
     "claude-opus-4-1-20250805": "anthropic"
   },
   "fallback": {
@@ -345,15 +347,15 @@ InferSwitch's most powerful feature is its custom expert routing system. Unlike 
 ```
 
 2. Start InferSwitch - it automatically routes using MLX classification:
-   - "Debug this React component" → `coding_specialist` → Claude Opus 4
-   - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4
-   - "Write API documentation" → `documentation_writer` → Claude Sonnet 4
+   - "Debug this React component" → `coding_specialist` → Claude Sonnet 4.5
+   - "Analyze this screenshot" → `vision_analyst` → Claude Sonnet 4.5
+   - "Write API documentation" → `documentation_writer` → Claude Haiku 4.5
    - "Generate commit message for these changes" → `commit_generator` → Claude 3.5 Haiku
-   - "Call this API endpoint" → `tool_executor` → Claude Sonnet 4
-   - "Solve this complex math problem" → `reasoning_engine` → Claude Opus 4
+   - "Call this API endpoint" → `tool_executor` → Claude Haiku 4.5
+   - "Solve this complex math problem" → `reasoning_engine` → Claude Opus 4.5
    - "What's 2+2?" → `fast_responder` → Claude 3.5 Haiku
-   - "Analyze this mixed text and image content" → `multimodal_specialist` → Claude Sonnet 4
-   - "Help me plan my day" → `general_assistant` → Claude 3.7 Sonnet
+   - "Analyze this mixed text and image content" → `multimodal_specialist` → Claude Sonnet 4.5
+   - "Help me plan my day" → `general_assistant` → Claude Haiku 4.5
 
 The MLX model analyzes each query against your expert descriptions and routes to the best match - no keyword patterns or hardcoded rules needed!
 

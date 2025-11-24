@@ -163,6 +163,8 @@ class AnthropicBackend(BaseBackend):
             "claude-4-sonnet-20250514",
             "claude-sonnet-4-5",
             "claude-sonnet-4-5-20250929",
+            "claude-opus-4-5",
+            "claude-opus-4-5-20251101",
             # Note: claude-3-5-sonnet-20241022 and claude-3-5-haiku-20241022 do not support thinking mode
             # Note: claude-haiku-4-5-20251001 does not support thinking mode
         ]
@@ -556,6 +558,8 @@ class AnthropicBackend(BaseBackend):
             "claude-4-sonnet-20250514",
             "claude-sonnet-4-5",
             "claude-sonnet-4-5-20250929",
+            "claude-opus-4-5",
+            "claude-opus-4-5-20251101",
         ]
 
         if effective_model in thinking_models:
@@ -1015,6 +1019,8 @@ class AnthropicBackend(BaseBackend):
             "claude-4-sonnet-20250514",
             "claude-sonnet-4-5",
             "claude-sonnet-4-5-20250929",
+            "claude-opus-4-5",
+            "claude-opus-4-5-20251101",
         ]
         return model in anthropic_models
 

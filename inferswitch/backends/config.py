@@ -68,6 +68,7 @@ class BackendConfigManager:
                     "claude-3-sonnet-20240229",
                     "claude-3-haiku-20240307",
                     "claude-haiku-4-5-20251001",
+                    "claude-opus-4-5-20251101",
                 ],
             ),
             "lm-studio": BackendConfig(
@@ -309,6 +310,8 @@ class BackendConfigManager:
             "claude-3-sonnet-20240229": "anthropic",
             "claude-3-haiku-20240307": "anthropic",
             "claude-haiku-4-5-20251001": "anthropic",
+            "claude-opus-4-5": "anthropic",
+            "claude-opus-4-5-20251101": "anthropic",
             # OpenAI models
             "gpt-4-turbo-preview": "openai",
             "gpt-4": "openai",

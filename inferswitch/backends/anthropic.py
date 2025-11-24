@@ -11,7 +11,6 @@ from .base import BaseBackend, BackendConfig, BackendResponse
 from .errors import BackendError, convert_backend_error, ContextWindowExceededError
 from ..utils.logging import log_request, log_chat_template
 from ..utils import get_logger, estimate_tokens_fallback
-from ..utils.tool_validation import validate_tool_pairs, remove_orphaned_tool_results
 from ..config import LOG_FILE, MODEL_MAX_TOKENS
 from ..utils.oauth import oauth_manager
 
@@ -77,69 +76,6 @@ class AnthropicBackend(BaseBackend):
 
         return headers
 
-    def _messages_compatible_with_thinking(
-        self, messages: List[Dict[str, Any]]
-    ) -> bool:
-        """
-        Check if messages are compatible with thinking mode.
-
-        When thinking mode is enabled, Anthropic requires that:
-        - A final assistant message must start with a thinking/redacted_thinking block
-
-        Returns False if messages are incompatible with thinking mode.
-        """
-        if not messages:
-            return True
-
-        # Find the LAST assistant message (if any)
-        last_assistant_idx = None
-        for i in range(len(messages) - 1, -1, -1):
-            if messages[i].get("role") == "assistant":
-                last_assistant_idx = i
-                break
-
-        # If no assistant message, compatible
-        if last_assistant_idx is None:
-            return True
-
-        # Check the last assistant message
-        msg = messages[last_assistant_idx]
-        content = msg.get("content", [])
-
-        # If content is a string, it's treated as text block (incompatible)
-        if isinstance(content, str):
-            logger.debug(
-                f"Last assistant message (pos {last_assistant_idx}) has string content, "
-                f"treated as text block (incompatible with thinking)"
-            )
-            return False
-
-        # If content is empty, compatible (edge case)
-        if not content:
-            return True
-
-        # Check if first content block is a thinking block
-        first_block = content[0] if isinstance(content, list) else None
-
-        # If first block doesn't exist or is not a dict, it's incompatible
-        if not first_block or not isinstance(first_block, dict):
-            logger.debug(
-                f"Last assistant message (pos {last_assistant_idx}) has invalid first block "
-                f"(not a dict), incompatible with thinking"
-            )
-            return False
-
-        # Check if the block type is thinking or redacted_thinking
-        block_type = first_block.get("type")
-        if block_type not in ["thinking", "redacted_thinking"]:
-            logger.debug(
-                f"Last assistant message (pos {last_assistant_idx}) starts with '{block_type}' "
-                f"instead of thinking block (incompatible)"
-            )
-            return False
-
-        return True
-
     async def create_message(
         self,
         messages: List[Dict[str, Any]],
@@ -170,45 +106,12 @@ class AnthropicBackend(BaseBackend):
         ]
 
         if effective_model in thinking_models:
-            # Check if messages are compatible with thinking mode
-            messages_compatible = self._messages_compatible_with_thinking(messages)
-
-            if messages_compatible:
-                # These models need the interleaved-thinking beta header
-                if not anthropic_beta:
-                    anthropic_beta = "interleaved-thinking-2025-05-14"
-                elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
-                    anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
-                kwargs["anthropic_beta"] = anthropic_beta
-            else:
-                logger.warning(
-                    f"Messages incompatible with thinking mode for {effective_model}. "
-                    f"Removing incompatible final assistant message to avoid API errors."
-                )
-                # Find and remove the last assistant message
-                last_assistant_idx = None
-                for i in range(len(messages) - 1, -1, -1):
-                    if messages[i].get("role") == "assistant":
-                        last_assistant_idx = i
-                        break
-
-                if last_assistant_idx is not None:
-                    removed_msg = messages.pop(last_assistant_idx)
-                    logger.debug(f"Removed incompatible assistant message at index {last_assistant_idx}")
-
-                    # Validate tool pairs after removal
-                    if not validate_tool_pairs(messages):
-                        logger.warning(
-                            "Removing assistant message broke tool_use/tool_result pairs. Cleaning up..."
-                        )
-                        messages[:] = remove_orphaned_tool_results(messages)
-
-                # Don't add thinking beta, and filter it out if present
-                if anthropic_beta and "interleaved-thinking" in anthropic_beta:
-                    beta_parts = [b.strip() for b in anthropic_beta.split(",")]
-                    beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
-                    anthropic_beta = ",".join(beta_parts) if beta_parts else None
-                    kwargs["anthropic_beta"] = anthropic_beta
+            # These models need the interleaved-thinking beta header
+            if not anthropic_beta:
+                anthropic_beta = "interleaved-thinking-2025-05-14"
+            elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
+                anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
+            kwargs["anthropic_beta"] = anthropic_beta
 
         # Build request data
         request_data = {
@@ -234,17 +137,7 @@ class AnthropicBackend(BaseBackend):
                         {"type": "text", "text": system},
                     ]
                 elif isinstance(system, list):
-                    # Check if Claude Code message already exists to avoid duplicates
-                    has_claude_code = any(
-                        isinstance(msg, dict) and
-                        msg.get("type") == "text" and
-                        msg.get("text") == "You are Claude Code, Anthropic's official CLI for Claude."
-                        for msg in system
-                    )
-                    if has_claude_code:
-                        request_data["system"] = system
-                    else:
-                        request_data["system"] = [claude_code_system] + system
+                    request_data["system"] = [claude_code_system] + system
                 else:
                     request_data["system"] = [claude_code_system]
             else:
@@ -261,35 +154,6 @@ class AnthropicBackend(BaseBackend):
                 effective_model, MODEL_MAX_TOKENS["default"]
             )
 
-            # Check if thinking budget is specified
-            thinking_budget = None
-            if "thinking" in kwargs and isinstance(kwargs["thinking"], dict):
-                thinking_budget = kwargs["thinking"].get("budget_tokens")
-
-            # Determine the actual max_tokens to use
-            capped_max_tokens = min(max_tokens, model_max)
-
-            # If thinking budget exists, ensure max_tokens > budget_tokens
-            if thinking_budget is not None:
-                if capped_max_tokens <= thinking_budget:
-                    # Need to ensure max_tokens > budget_tokens
-                    required_max_tokens = thinking_budget + 1
-                    if required_max_tokens <= model_max:
-                        logger.warning(
-                            f"Adjusting max_tokens from {capped_max_tokens} to {required_max_tokens} "
-                            f"to satisfy thinking.budget_tokens requirement ({thinking_budget})"
-                        )
-                        capped_max_tokens = required_max_tokens
-                    else:
-                        # Model's max_tokens can't accommodate the thinking budget
-                        logger.warning(
-                            f"thinking.budget_tokens ({thinking_budget}) is too large for {effective_model} "
-                            f"(max_tokens limit: {model_max}). Reducing budget_tokens to {model_max - 1000}."
-                        )
-                        # Reduce the thinking budget to fit
-                        kwargs["thinking"]["budget_tokens"] = model_max - 1000
-                        capped_max_tokens = model_max
-
             if max_tokens > model_max:
                 # Check if model routing is happening
                 is_routed = effective_model != model
@@ -298,17 +162,17 @@ class AnthropicBackend(BaseBackend):
                     # Model routing is expected behavior - log at DEBUG level
                     logger.debug(
                         f"Model routing: {model} → {effective_model}. "
-                        f"Capping max_tokens from {max_tokens} to {capped_max_tokens} (lowest common denominator)."
+                        f"Capping max_tokens from {max_tokens} to {model_max} (lowest common denominator)."
                     )
                 else:
                     # User requested this specific model with too many tokens - log WARNING
                     logger.warning(
                         f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
-                        f"Capping to {capped_max_tokens}."
+                        f"Capping to {model_max}."
                     )
-            request_data["max_tokens"] = capped_max_tokens
-        elif max_tokens is not None:
-            request_data["max_tokens"] = max_tokens
+                request_data["max_tokens"] = model_max
+            else:
+                request_data["max_tokens"] = max_tokens
 
         if temperature is not None:
             request_data["temperature"] = temperature
@@ -563,44 +427,11 @@ class AnthropicBackend(BaseBackend):
         ]
 
         if effective_model in thinking_models:
-            # Check if messages are compatible with thinking mode
-            messages_compatible = self._messages_compatible_with_thinking(messages)
-
-            if messages_compatible:
-                if not anthropic_beta:
-                    anthropic_beta = "interleaved-thinking-2025-05-14"
-                elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
-                    anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
-                kwargs["anthropic_beta"] = anthropic_beta
-            else:
-                logger.warning(
-                    f"Streaming messages incompatible with thinking mode for {effective_model}. "
-                    f"Removing incompatible final assistant message to avoid API errors."
-                )
-                # Find and remove the last assistant message
-                last_assistant_idx = None
-                for i in range(len(messages) - 1, -1, -1):
-                    if messages[i].get("role") == "assistant":
-                        last_assistant_idx = i
-                        break
-
-                if last_assistant_idx is not None:
-                    removed_msg = messages.pop(last_assistant_idx)
-                    logger.debug(f"Removed incompatible assistant message at index {last_assistant_idx} (streaming)")
-
-                    # Validate tool pairs after removal
-                    if not validate_tool_pairs(messages):
-                        logger.warning(
-                            "Removing assistant message (streaming) broke tool_use/tool_result pairs. Cleaning up..."
-                        )
-                        messages[:] = remove_orphaned_tool_results(messages)
-
-                # Don't add thinking beta, and filter it out if present
-                if anthropic_beta and "interleaved-thinking" in anthropic_beta:
-                    beta_parts = [b.strip() for b in anthropic_beta.split(",")]
-                    beta_parts = [b for b in beta_parts if "interleaved-thinking" not in b]
-                    anthropic_beta = ",".join(beta_parts) if beta_parts else None
-                    kwargs["anthropic_beta"] = anthropic_beta
+            if not anthropic_beta:
+                anthropic_beta = "interleaved-thinking-2025-05-14"
+            elif "interleaved-thinking-2025-05-14" not in anthropic_beta:
+                anthropic_beta = f"{anthropic_beta},interleaved-thinking-2025-05-14"
+            kwargs["anthropic_beta"] = anthropic_beta
 
         # Build request data with streaming enabled
         request_data = {
@@ -624,17 +455,7 @@ class AnthropicBackend(BaseBackend):
                         {"type": "text", "text": system},
                     ]
                 elif isinstance(system, list):
-                    # Check if Claude Code message already exists to avoid duplicates
-                    has_claude_code = any(
-                        isinstance(msg, dict) and
-                        msg.get("type") == "text" and
-                        msg.get("text") == "You are Claude Code, Anthropic's official CLI for Claude."
-                        for msg in system
-                    )
-                    if has_claude_code:
-                        request_data["system"] = system
-                    else:
-                        request_data["system"] = [claude_code_system] + system
+                    request_data["system"] = [claude_code_system] + system
                 else:
                     request_data["system"] = [claude_code_system]
             else:
@@ -648,36 +469,6 @@ class AnthropicBackend(BaseBackend):
             model_max = MODEL_MAX_TOKENS.get(
                 effective_model, MODEL_MAX_TOKENS["default"]
             )
-
-            # Check if thinking budget is specified
-            thinking_budget = None
-            if "thinking" in kwargs and isinstance(kwargs["thinking"], dict):
-                thinking_budget = kwargs["thinking"].get("budget_tokens")
-
-            # Determine the actual max_tokens to use
-            capped_max_tokens = min(max_tokens, model_max)
-
-            # If thinking budget exists, ensure max_tokens > budget_tokens
-            if thinking_budget is not None:
-                if capped_max_tokens <= thinking_budget:
-                    # Need to ensure max_tokens > budget_tokens
-                    required_max_tokens = thinking_budget + 1
-                    if required_max_tokens <= model_max:
-                        logger.warning(
-                            f"Streaming: Adjusting max_tokens from {capped_max_tokens} to {required_max_tokens} "
-                            f"to satisfy thinking.budget_tokens requirement ({thinking_budget})"
-                        )
-                        capped_max_tokens = required_max_tokens
-                    else:
-                        # Model's max_tokens can't accommodate the thinking budget
-                        logger.warning(
-                            f"Streaming: thinking.budget_tokens ({thinking_budget}) is too large for {effective_model} "
-                            f"(max_tokens limit: {model_max}). Reducing budget_tokens to {model_max - 1000}."
-                        )
-                        # Reduce the thinking budget to fit
-                        kwargs["thinking"]["budget_tokens"] = model_max - 1000
-                        capped_max_tokens = model_max
-
             if max_tokens > model_max:
                 # Check if model routing is happening
                 is_routed = effective_model != model
@@ -686,17 +477,17 @@ class AnthropicBackend(BaseBackend):
                     # Model routing is expected behavior - log at DEBUG level
                     logger.debug(
                         f"Model routing (streaming): {model} → {effective_model}. "
-                        f"Capping max_tokens from {max_tokens} to {capped_max_tokens} (lowest common denominator)."
+                        f"Capping max_tokens from {max_tokens} to {model_max} (lowest common denominator)."
                     )
                 else:
                     # User requested this specific model with too many tokens - log WARNING
                     logger.warning(
                         f"Requested max_tokens ({max_tokens}) exceeds limit for {effective_model} ({model_max}). "
-                        f"Capping to {capped_max_tokens}."
+                        f"Capping to {model_max}."
                     )
-            request_data["max_tokens"] = capped_max_tokens
-        elif max_tokens is not None:
-            request_data["max_tokens"] = max_tokens
+                request_data["max_tokens"] = model_max
+            else:
+                request_data["max_tokens"] = max_tokens
 
         if temperature is not None:
             request_data["temperature"] = temperature

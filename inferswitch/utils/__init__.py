@@ -31,13 +31,6 @@ from .auth import (
     AuthenticationError,
     validate_authentication,
 )
-from .tool_validation import (
-    validate_tool_pairs,
-    extract_tool_use_ids,
-    extract_tool_result_ids,
-    filter_messages_preserving_tool_pairs,
-    remove_orphaned_tool_results,
-)
 
 __all__ = [
     "log_request",
@@ -66,9 +59,4 @@ __all__ = [
     "get_openai_auth_headers",
     "AuthenticationError",
     "validate_authentication",
-    "validate_tool_pairs",
-    "extract_tool_use_ids",
-    "extract_tool_result_ids",
-    "filter_messages_preserving_tool_pairs",
-    "remove_orphaned_tool_results",
 ]

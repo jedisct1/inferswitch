@@ -4,12 +4,8 @@ Chat template conversion and manipulation utilities.
 
 import json
 from typing import List, Dict
-import logging
 
 from ..config import MODEL_CONTEXT_SIZES, TRUNCATION_BUFFER
-from .tool_validation import validate_tool_pairs, remove_orphaned_tool_results
-
-logger = logging.getLogger(__name__)
 
 
 def convert_to_chat_template(request_dict: dict) -> List[Dict[str, str]]:
@@ -238,13 +234,6 @@ def truncate_chat_template_to_fit(
 
     # Combine system messages with kept conversation
     truncated_messages.extend(kept_conversation)
-
-    # Validate and fix tool_use/tool_result pairs
-    if not validate_tool_pairs(truncated_messages):
-        logger.warning(
-            "Truncated messages have invalid tool_use/tool_result pairs. Cleaning up..."
-        )
-        truncated_messages = remove_orphaned_tool_results(truncated_messages)
 
     return truncated_messages
 

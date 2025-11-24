@@ -13,9 +13,9 @@
   },
   "expert_models": {
     "coding_specialist": [
+      "claude-opus-4-5",
       "claude-sonnet-4-5",
       "claude-haiku-4-5-20251001",
-      "claude-opus-4-1-20250805",
       "openhands-lm-32b-v0.1",
       "qwen/qwen3-30b-a3b"
     ],
@@ -42,8 +42,8 @@
       "qwen/qwen3-1.7b"
     ],
     "reasoning_engine": [
-      "claude-sonnet-4-5",
-      "claude-opus-4-1-20250805"
+      "claude-opus-4-5",
+      "claude-sonnet-4-5"
     ],
     "fast_responder": [
       "claude-3-5-haiku-20241022",
@@ -73,6 +73,7 @@
     "claude-sonnet-4-20250514": "anthropic",
     "claude-haiku-4-5-20251001": "anthropic",
     "claude-sonnet-4-5": "anthropic",
+    "claude-opus-4-5": "anthropic",
     "claude-opus-4-20250514": "anthropic"
   },
   "fallback": {
